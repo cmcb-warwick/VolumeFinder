@@ -12,8 +12,9 @@ function toc()
 	killvariables/Z tictoc
 end
 
-Function VolumeFinder(m0)
+Function VolumeFinder(m0,meth)
 	Wave m0
+	Variable meth
 	
 	tic()
 	Variable nI=Dimsize(m0,0)
@@ -46,34 +47,46 @@ Function VolumeFinder(m0)
 	Duplicate/O/R=(0,nI-1) m1, pCloud
 	KillWaves w0,m1
 	
-//	Triangulate3d/VOL pCloud
-
-	ConvexHull pCloud
-	Wave M_Hull
-	Triangulate3d/VOL M_Hull
-//	Triangulate3d/out=2 M_Hull
-//	Wave M_TetraPath
-//	nI=dimsize(M_TetraPath,0)/20	//number of tetrahedra
-//	For(i=0; i<nI; i+=1)
-//		waveT[0][0]=M_TetraPath[0+(i*20)][0]
-//		waveT[1][0]=M_TetraPath[1+(i*20)][0]
-//		waveT[2][0]=M_TetraPath[2+(i*20)][0]
-//		waveT[3][0]=M_TetraPath[7+(i*20)][0]
-//		waveT[0][1]=M_TetraPath[0+(i*20)][1]
-//		waveT[1][1]=M_TetraPath[1+(i*20)][1]
-//		waveT[2][1]=M_TetraPath[2+(i*20)][1]
-//		waveT[3][1]=M_TetraPath[7+(i*20)][1]
-//		waveT[0][2]=M_TetraPath[0+(i*20)][2]
-//		waveT[1][2]=M_TetraPath[1+(i*20)][2]
-//		waveT[2][2]=M_TetraPath[2+(i*20)][2]
-//		waveT[3][2]=M_TetraPath[7+(i*20)][2]
-//		tempvar=MatrixDet(waveT)/6
-//		If (tempvar<0)
-//			vol +=tempvar*-1
-//		else
-//			vol +=tempvar
-//		EndIf
-//	EndFor
+#if (IgorVersion() >= 7)
+	If(meth==1)
+		Triangulate3d/VOL pCloud
+	Else
+		ConvexHull pCloud
+		Wave M_Hull
+		Triangulate3d/VOL M_Hull
+	EndIf
 	Print "Volume is", V_value
+#else
+	If(meth==1)
+		Triangulate3d/out=2 pCloud
+	Else	
+		ConvexHull pCloud
+		Wave M_Hull
+		Triangulate3d/out=2 M_Hull
+		Wave M_TetraPath
+		nI=dimsize(M_TetraPath,0)/20	//number of tetrahedra
+		For(i=0; i<nI; i+=1)
+			waveT[0][0]=M_TetraPath[0+(i*20)][0]
+			waveT[1][0]=M_TetraPath[1+(i*20)][0]
+			waveT[2][0]=M_TetraPath[2+(i*20)][0]
+			waveT[3][0]=M_TetraPath[7+(i*20)][0]
+			waveT[0][1]=M_TetraPath[0+(i*20)][1]
+			waveT[1][1]=M_TetraPath[1+(i*20)][1]
+			waveT[2][1]=M_TetraPath[2+(i*20)][1]
+			waveT[3][1]=M_TetraPath[7+(i*20)][1]
+			waveT[0][2]=M_TetraPath[0+(i*20)][2]
+			waveT[1][2]=M_TetraPath[1+(i*20)][2]
+			waveT[2][2]=M_TetraPath[2+(i*20)][2]
+			waveT[3][2]=M_TetraPath[7+(i*20)][2]
+			tempvar=MatrixDet(waveT)/6
+			If (tempvar<0)
+				vol +=tempvar*-1
+			else
+				vol +=tempvar
+			EndIf
+		EndFor
+		Print "Volume is", vol
+	EndIf
+#endif
 	toc()
 End
