@@ -12,12 +12,12 @@ function toc()
 	killvariables/Z tictoc
 end
 
-Function VolumeFinder(m0,meth)
+Function VolumeCalc(m0,meth)
 	Wave m0
 	Variable meth
 	
 	tic()
-	Variable nI=Dimsize(m0,0)
+	Variable/G nI=Dimsize(m0,0)
 	Variable nJ=Dimsize(m0,1)
 	Variable nK=Dimsize(m0,2)
 	
@@ -25,7 +25,8 @@ Function VolumeFinder(m0,meth)
 	Make/O/N=(4,4) waveT=1
 	
 	Variable l=0	//rows in result wave
-	Variable vol=0,tempvar
+	Variable/G vol=0
+	Variable tempvar
 	
 	Variable i,j,k
 	
@@ -55,7 +56,8 @@ Function VolumeFinder(m0,meth)
 		Wave M_Hull
 		Triangulate3d/VOL M_Hull
 	EndIf
-	Print "Volume is", V_value
+	vol=V_value
+//	Print "Volume is", V_value
 #else
 	If(meth==1)
 		Triangulate3d/out=2 pCloud
@@ -85,8 +87,58 @@ Function VolumeFinder(m0,meth)
 				vol +=tempvar
 			EndIf
 		EndFor
-		Print "Volume is", vol
+		KillWaves WaveT
+//		Print "Volume is", vol
 	EndIf
 #endif
 	toc()
+End
+
+Function VolumeFinder(opt)
+	Variable opt
+	
+	String expDiskFolderName,expDataFileName
+	String FileList, ThisFile, wavenames, wName, MTwave, wList
+	Variable FileLoop, nWaves, i
+	
+	NewPath/O/Q/M="Please find disk folder" ExpDiskFolder
+	if (V_flag!=0)
+		DoAlert 0, "Disk folder error"
+		Return -1
+	endif
+	PathInfo /S ExpDiskFolder
+	ExpDiskFolderName=S_path
+	FileList=IndexedFile(expDiskFolder,-1,".tif")
+	Variable nFiles=ItemsInList(FileList)
+	
+	NVAR /Z vol
+	NVAR /Z nI
+	
+	Make/O/D/N=(nFiles) volWave
+	Make/O/T/N=(nFiles) fileWave
+	Make/O/D/N=(nFiles) nPointWave
+	
+	for (FileLoop=0; FileLoop<nFiles; FileLoop+=1)
+		ThisFile=StringFromList(FileLoop, FileList)
+		expDataFileName=ReplaceString(".tif",ThisFile,"")	//get rid of .tif
+		expDataFileName=ReplaceString(".labels",expDataFileName,"")	//get rid of .labels
+		ImageLoad/O/T=tiff/C=-1/LR3D/Q/P=expDiskFolder ThisFile
+		VolumeCalc($ThisFile,opt)
+		fileWave[FileLoop]=ThisFile
+		volWave[FileLoop]=vol
+		nPointWave[FileLoop]=nI
+		If(opt!=1)
+			Wave M_Hull
+			wName=expDataFileName + "_Hull"
+			Rename M_Hull $wName
+		EndIf
+		Wave pCloud
+		wName=expDataFileName + "_pCloud"
+		Rename pCloud $wName
+		Wave M_TetraPath
+		wName=expDataFileName + "_TP"
+		Rename M_TetraPath $wName
+		
+		KillWaves $ThisFile
+	endfor
 End
