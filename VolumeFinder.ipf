@@ -33,8 +33,8 @@ Function VolumeCalc(m0,meth)
 	Variable i,j,k
 	
 	For (k=0; k<nK; k+=1) //layers
-		For (j=0; j<nK; j+=1) //columns
-			For (i=0; i<ni; i+=1)	//rows
+		For (j=0; j<nJ; j+=1) //columns
+			For (i=0; i<nI; i+=1)	//rows
 				If (m0[i][j][k]!=0)
 					m1[l][0]=i
 					m1[l][1]=j
@@ -127,7 +127,7 @@ Function VolumeFinder(opt)
 		expDataFileName=ReplaceString(".labels",expDataFileName,"")	//get rid of .labels
 		ImageLoad/O/T=tiff/C=-1/LR3D/Q/P=expDiskFolder ThisFile
 		VolumeCalc($ThisFile,opt)
-		fileWave[FileLoop]=ThisFile
+		fileWave[FileLoop]=expDataFileName
 		volWave[FileLoop]=vol
 		nPointWave[FileLoop]=nI
 		If(igorversion()>=7)
@@ -160,8 +160,20 @@ Function VolumeFinder(opt)
 	Edit /N=Results fileWave,nPointWave,volWave,densityWave
 	DoWindow /K MTvol
 	Display /N=MTvol nPointWave vs fileWave
+	SetAxis/A/N=1 left
+	ModifyGraph swapXY=1
+	SetAxis/A/R left
+	Label bottom "Point Volume"
 	DoWindow /K Spindlevol
 	Display /N=spindlevol volWave vs fileWave
+	SetAxis/A/N=1 left
+	ModifyGraph swapXY=1
+	SetAxis/A/R left
+	Label bottom "Hull Volume"
 	DoWindow /K Density
 	Display /N=densityvol densityWave vs fileWave
+	SetAxis/A/N=1 left
+	ModifyGraph swapXY=1
+	SetAxis/A/R left
+	Label bottom "Density"
 End
