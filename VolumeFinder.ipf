@@ -17,15 +17,17 @@ Function VolumeCalc(m0,meth)
 	Variable meth
 	
 	tic()
-	Variable/G nI=Dimsize(m0,0)
+	NVAR /Z vol	//
+	NVAR /Z nI	//global variables
+
+	nI=Dimsize(m0,0)
 	Variable nJ=Dimsize(m0,1)
 	Variable nK=Dimsize(m0,2)
 	
 	Make/O/N=((nI*nJ*nK),3) m1=NaN	//slows code but worth it
-	Make/O/N=(4,4) waveT=1
 	
 	Variable l=0	//rows in result wave
-	Variable/G vol=0
+	vol=0
 	Variable tempvar
 	
 	Variable i,j,k
@@ -67,6 +69,7 @@ Function VolumeCalc(m0,meth)
 		Triangulate3d/out=2 M_Hull
 		Wave M_TetraPath
 		nI=dimsize(M_TetraPath,0)/20	//number of tetrahedra
+		Make/O/N=(4,4) waveT=1
 		For(i=0; i<nI; i+=1)
 			waveT[0][0]=M_TetraPath[0+(i*20)][0]
 			waveT[1][0]=M_TetraPath[1+(i*20)][0]
@@ -95,10 +98,10 @@ Function VolumeCalc(m0,meth)
 End
 
 Function VolumeFinder(opt)
-	Variable opt
+	Variable opt //0 is the calculation of volume from 3D convex hull, 1 is calculation from all points
 	
 	String expDiskFolderName,expDataFileName
-	String FileList, ThisFile, wavenames, wName, MTwave, wList
+	String FileList, ThisFile, wName
 	Variable FileLoop, nWaves, i
 	
 	NewPath/O/Q/M="Please find disk folder" ExpDiskFolder
@@ -111,8 +114,8 @@ Function VolumeFinder(opt)
 	FileList=IndexedFile(expDiskFolder,-1,".tif")
 	Variable nFiles=ItemsInList(FileList)
 	
-	NVAR /Z vol
-	NVAR /Z nI
+	Variable /G vol
+	Variable /G nI
 	
 	Make/O/D/N=(nFiles) volWave
 	Make/O/T/N=(nFiles) fileWave
@@ -127,18 +130,38 @@ Function VolumeFinder(opt)
 		fileWave[FileLoop]=ThisFile
 		volWave[FileLoop]=vol
 		nPointWave[FileLoop]=nI
-		If(opt!=1)
-			Wave M_Hull
-			wName=expDataFileName + "_Hull"
-			Rename M_Hull $wName
+		If(igorversion()>=7)
+			If(opt!=1)
+				Wave M_Hull
+				wName=expDataFileName + "_Hull"
+				Rename M_Hull $wName
+			EndIf
+			Wave pCloud
+			wName=expDataFileName + "_pCloud"
+			Rename pCloud $wName
+		Else
+			If(opt!=1)
+				Wave M_Hull
+				wName=expDataFileName + "_Hull"
+				Rename M_Hull $wName
+			EndIf
+			Wave pCloud
+			wName=expDataFileName + "_pCloud"
+			Rename pCloud $wName
+			Wave M_TetraPath
+			wName=expDataFileName + "_TP"
+			Rename M_TetraPath $wName
 		EndIf
-		Wave pCloud
-		wName=expDataFileName + "_pCloud"
-		Rename pCloud $wName
-		Wave M_TetraPath
-		wName=expDataFileName + "_TP"
-		Rename M_TetraPath $wName
-		
 		KillWaves $ThisFile
 	endfor
+	Duplicate nPointWave densityWave
+	densityWave /=volWave
+	DoWindow /K Results
+	Edit /N=Results fileWave,nPointWave,volWave,densityWave
+	DoWindow /K MTvol
+	Display /N=MTvol nPointWave vs fileWave
+	DoWindow /K Spindlevol
+	Display /N=spindlevol volWave vs fileWave
+	DoWindow /K Density
+	Display /N=densityvol densityWave vs fileWave
 End
