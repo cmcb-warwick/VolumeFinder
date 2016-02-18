@@ -48,7 +48,7 @@ Function VolumeCalc(m0,meth)
 	WaveTransform ZapNans w0
 	nI=numpnts(w0)
 	Duplicate/O/R=(0,nI-1) m1, pCloud
-	KillWaves w0,m1
+	KillWaves w0,m1,m0
 	
 #if (IgorVersion() >= 7)
 	If(meth==1)
@@ -152,7 +152,7 @@ Function VolumeFinder(opt)
 			wName=expDataFileName + "_TP"
 			Rename M_TetraPath $wName
 		EndIf
-		KillWaves $ThisFile
+		KillWaves /Z $ThisFile
 	endfor
 	Duplicate nPointWave densityWave
 	densityWave /=volWave
