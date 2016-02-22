@@ -270,4 +270,3 @@ Function VolumeFinder(opt)
 	ModifyLayout frame=0,trans=1
 	Execute /Q "Tile"
 End
-End
