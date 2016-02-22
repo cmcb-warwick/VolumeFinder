@@ -241,19 +241,19 @@ Function VolumeFinder(opt)
 	Display /N=MTvol nPointWave vs fileWave
 	ModifyGraph swapXY=1
 	SetAxis/A/R left
-	SetAxis/A/N=1 bottom
+	SetAxis/A/E=1/N=1 bottom
 	Label bottom "Point Volume"
 	DoWindow /K Spindlevol
 	Display /N=spindlevol volWave vs fileWave
 	ModifyGraph swapXY=1
 	SetAxis/A/R left
-	SetAxis/A/N=1 bottom
+	SetAxis/A/E=1/N=1 bottom
 	Label bottom "Hull Volume"
 	DoWindow /K Density
 	Display /N=densityvol densityWave vs fileWave
 	ModifyGraph swapXY=1
 	SetAxis/A/R left
-	SetAxis/A/N=1 bottom
+	SetAxis/A/E=1/N=1 bottom
 	Label bottom "Density"
 
 	DoWindow /K summaryLayout
