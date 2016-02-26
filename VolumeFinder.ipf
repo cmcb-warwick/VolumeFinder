@@ -273,9 +273,11 @@ End
 
 Function ScaleIt(xnm,ynm,znm)
 	Variable xnm,ynm,znm
+	//This will scale the points to real world values
 	
 	Variable scale=(xnm*ynm*znm)/1000000	//in µm^3
 	//need to scale MTs in a different way
+	//Works only for MTs 1px wide and not moving in z
 	If(xnm !=ynm)
 		Print "xnm and ynm are not equal. Please check"
 	EndIf
