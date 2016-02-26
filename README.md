@@ -7,7 +7,8 @@ This code is to measure the density of microtubules in a stack of TIFFs. Microtu
 2. Amira files are thresholded and converted to TIFF in FIJI using the [amThreshTiff.ijm](https://github.com/quantixed/VolumeFinder/blob/master/amThreshTiff.ijm) macro
 3. These TIFFs are batch-processed by Igor
 
-To do this call <code>VolumeFinder(2)</code>. 2 specifies the fastest calculation method. Now point Igor at the directory containing the TIFFs.
+To do this call <code>VolumeFinder(2)</code>. Option 2 specifies the fastest calculation method. Now point Igor at the directory containing the TIFFs.
+You can scale the output to real world values using <code>ScaleIt(xnm,ynm,znm)</code>. This will scale the point volumes and hull volumes to µm^3.
 
 Caution:
 * For best performance /VOL flag is used, only available in Igor 7 Beta 6
