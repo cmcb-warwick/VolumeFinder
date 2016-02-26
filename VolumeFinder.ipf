@@ -275,9 +275,14 @@ Function ScaleIt(xnm,ynm,znm)
 	Variable xnm,ynm,znm
 	
 	Variable scale=(xnm*ynm*znm)/1000000	//in µm^3
+	//need to scale MTs in a different way
+	If(xnm !=ynm)
+		Print "xnm and ynm are not equal. Please check"
+	EndIf
+	Variable MTscale=xnm*((PI*12.5)^2)
 	
 	Wave nPointWave,volWave
-	nPointWave *=scale
+	nPointWave *=MTscale
 	volWave *=scale
 	Label /W=MTvol bottom, "Point Volume (µm\S3\M)"
 	Label /W=spindlevol bottom, "Hull Volume (µm\S3\M)"	
