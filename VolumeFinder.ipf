@@ -270,3 +270,16 @@ Function VolumeFinder(opt)
 	ModifyLayout frame=0,trans=1
 	Execute /Q "Tile"
 End
+
+Function ScaleIt(xnm,ynm,znm)
+	Variable xnm,ynm,znm
+	
+	Variable scale=(xnm*ynm*znm)/1000000	//in µm^3
+	
+	Wave nPointWave,volWave
+	nPointWave *=scale
+	volWave *=scale
+	Label /W=MTvol bottom, "Point Volume (µm\S3\M)"
+	Label /W=spindlevol bottom, "Hull Volume (µm\S3\M)"	
+	
+End
