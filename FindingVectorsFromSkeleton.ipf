@@ -50,7 +50,7 @@ Function ProcessTIFFs()
 	Prompt sp2z, "Z2"
 	DoPrompt "Enter centrosome positions, px", sp1x,sp1y,sp1z, sp2x,sp2y,sp2z
 	
-	Make/O spWave={{sp1x,sp1y,sp1z},{sp2x,sp2y,sp2z}}
+	Make/O spWave={{sp1x,sp2x},{sp1y,sp2y},{sp1z,sp2z}}
 	spWave[][0,1] *= pxSize
 	spWave[][2] *= zSize
 	
