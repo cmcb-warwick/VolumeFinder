@@ -180,11 +180,13 @@ Function Polarise()
 	Variable sp2y = spWave[1][1]
 	Variable sp2z = spWave[1][2]
 	Variable sp1_A,sp1_B,sp2_A,sp2_B
+	Variable ABx, CDx, ABy, CDy
 	String wName,expr,zPos,vNo
 	Variable vZ,nearest
 	Make/O/N=(nVectors)/T pol_Name	// name of vector wave
 	Make/O/N=(nVectors) pol_Des	// which spindle pole is it from
 	Make/O/N=(nVectors) pol_Rev	// did the polarity get reversed?
+	Make/O/N=(nVectors) pol_Angle // what is the angle releative to the spindle axis?
 	
 	Variable i
 	
@@ -208,7 +210,7 @@ Function Polarise()
 			else
 				pol_Rev[i] = 0
 			endif
-			ModifyGraph/W=allPlot rgb($wName)=(16385,16388,65535)
+//			ModifyGraph/W=allPlot rgb($wName)=(16385,16388,65535) // will colour each half spindle differently
 		else
 			pol_Des[i] = 2
 			if(sp2_A >= sp2_B)
@@ -217,8 +219,24 @@ Function Polarise()
 			else
 				pol_Rev[i] = 0
 			endif
-			ModifyGraph/W=allPlot rgb($wName)=(16385,65535,16388)
+//			ModifyGraph/W=allPlot rgb($wName)=(16385,65535,16388)
 		endif
+		// line AB is between spindle poles
+		// line CD is the MT vector
+		ABx=sp2X - sp1X
+		CDx=w0[1][0] - w0[0][0]
+		ABy=sp2Y - sp1Y
+		CDy=w0[1][1] - w0[0][1]
+		pol_Angle[i] = acos(((ABx*CDx)+(ABy*CDy)) / (sqrt((ABx^2)+(ABy^2)) * sqrt((CDx^2) + (CDy^2)))) * (180/pi)
+		if(pol_Angle[i] <= 90)
+			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * (pol_Angle[i]/90)),32767)
+		else
+			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * ((180-pol_Angle[i])/90)),32767)
+		endif
+//		if(nearest == sp1_A || nearest == sp1_B)
+//			ModifyGraph/W=allPlot rgb($wName)=(32767,65535 * (pol_Angle[i]/90),32767)
+//		else
+//			ModifyGraph/W=allPlot rgb($wName)=(32767,65535 * ((90-pol_Angle[i])/90),32767)
+//		endif
 	endfor
-	
 End
