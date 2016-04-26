@@ -210,7 +210,14 @@ Function Polarise()
 			else
 				pol_Rev[i] = 0
 			endif
-//			ModifyGraph/W=allPlot rgb($wName)=(16385,16388,65535) // will colour each half spindle differently
+			// line AB is between spindle poles
+			// line CD is the MT vector
+			ABx=sp2X - sp1X
+			CDx=w0[1][0] - w0[0][0]
+			ABy=sp2Y - sp1Y
+			CDy=w0[1][1] - w0[0][1]
+//			pol_Angle[i] = acos(((ABx*CDx)+(ABy*CDy)) / (sqrt((ABx^2)+(ABy^2)) * sqrt((CDx^2) + (CDy^2)))) * (180/pi)
+			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		else
 			pol_Des[i] = 2
 			if(sp2_A >= sp2_B)
@@ -219,24 +226,17 @@ Function Polarise()
 			else
 				pol_Rev[i] = 0
 			endif
-//			ModifyGraph/W=allPlot rgb($wName)=(16385,65535,16388)
+			ABx=sp1X - sp2X
+			CDx=w0[1][0] - w0[0][0]
+			ABy=sp1Y - sp2Y
+			CDy=w0[1][1] - w0[0][1]
+//			pol_Angle[i] = acos(((ABx*CDx)+(ABy*CDy)) / (sqrt((ABx^2)+(ABy^2)) * sqrt((CDx^2) + (CDy^2)))) * (180/pi)
+			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		endif
-		// line AB is between spindle poles
-		// line CD is the MT vector
-		ABx=sp2X - sp1X
-		CDx=w0[1][0] - w0[0][0]
-		ABy=sp2Y - sp1Y
-		CDy=w0[1][1] - w0[0][1]
-		pol_Angle[i] = acos(((ABx*CDx)+(ABy*CDy)) / (sqrt((ABx^2)+(ABy^2)) * sqrt((CDx^2) + (CDy^2)))) * (180/pi)
 		if(pol_Angle[i] <= 90)
 			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * (pol_Angle[i]/90)),32767)
 		else
 			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * ((180-pol_Angle[i])/90)),32767)
 		endif
-//		if(nearest == sp1_A || nearest == sp1_B)
-//			ModifyGraph/W=allPlot rgb($wName)=(32767,65535 * (pol_Angle[i]/90),32767)
-//		else
-//			ModifyGraph/W=allPlot rgb($wName)=(32767,65535 * ((90-pol_Angle[i])/90),32767)
-//		endif
 	endfor
 End
