@@ -216,7 +216,6 @@ Function Polarise()
 			CDx=w0[1][0] - w0[0][0]
 			ABy=sp2Y - sp1Y
 			CDy=w0[1][1] - w0[0][1]
-//			pol_Angle[i] = acos(((ABx*CDx)+(ABy*CDy)) / (sqrt((ABx^2)+(ABy^2)) * sqrt((CDx^2) + (CDy^2)))) * (180/pi)
 			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		else
 			pol_Des[i] = 2
@@ -230,13 +229,12 @@ Function Polarise()
 			CDx=w0[1][0] - w0[0][0]
 			ABy=sp1Y - sp2Y
 			CDy=w0[1][1] - w0[0][1]
-//			pol_Angle[i] = acos(((ABx*CDx)+(ABy*CDy)) / (sqrt((ABx^2)+(ABy^2)) * sqrt((CDx^2) + (CDy^2)))) * (180/pi)
 			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		endif
-		if(pol_Angle[i] <= 90)
-			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * (pol_Angle[i]/90)),32767)
+		if(pol_Angle[i] >= 0)
+			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * (pol_Angle[i]/360)),32767)
 		else
-			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * ((180-pol_Angle[i])/90)),32767)
+			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * ((-pol_Angle[i])/360)),32767)
 		endif
 	endfor
 End
