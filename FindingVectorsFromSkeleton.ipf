@@ -11,7 +11,9 @@ Function MTs2Vectors()
 	ProcessTIFFs()
 	DoWindow/F allPlot
 	SetAxis/A/R left
+	ModifyGraph width={Plan,1,bottom,left}
 	Toc()
+	Polarise()
 End
 
 Function ProcessTIFFs()
@@ -97,8 +99,8 @@ Function Extractor(m0)
 	for(i = 1; i < (lastMT + 1); i += 1) // MT, 1-based
 		Duplicate/O m0, tempXw
 		Duplicate/O m0, tempYw
-		tempXw = (m0 == i) ? p : NaN
-		tempYw = (m0 == i) ? q : NaN
+		tempXw = (m0[p][q] == i) ? p : NaN
+		tempYw = (m0[p][q] == i) ? q : NaN
 		Redimension/N=(V_npnts) tempXw,tempYw
 		WaveTransform zapnans tempXw
 		WaveTransform zapnans tempYw
@@ -163,4 +165,60 @@ Function ScaleIt(xnm,ynm,znm)
 	volWave *=scale
 	Label /W=MTvol bottom, "Point Volume (µm\S3\M)"
 	Label /W=spindlevol bottom, "Hull Volume (µm\S3\M)"	
+End
+
+Function Polarise()
+	String VectorList = WaveList("vec_*",";","")
+	Variable nVectors = ItemsInList(VectorList)
+	// In vector wave, row 0 and 1 are xy coords for points A and B, pick Z from name
+	// Spindle poles are 1 and 2
+	WAVE spWave
+	Variable sp1x = spWave[0][0]
+	Variable sp1y = spWave[0][1]
+	Variable sp1z = spWave[0][2]
+	Variable sp2x = spWave[1][0]
+	Variable sp2y = spWave[1][1]
+	Variable sp2z = spWave[1][2]
+	Variable sp1_A,sp1_B,sp2_A,sp2_B
+	String wName,expr,zPos,vNo
+	Variable vZ,nearest
+	Make/O/N=(nVectors)/T pol_Name	// name of vector wave
+	Make/O/N=(nVectors) pol_Des	// which spindle pole is it from
+	Make/O/N=(nVectors) pol_Rev	// did the polarity get reversed?
+	
+	Variable i
+	
+	for(i = 0; i < nVectors; i += 1)
+		wName = StringFromList(i,VectorList)
+		Wave w0 = $wName
+		pol_Name[i] = wName
+		expr="vec\\w([[:digit:]]+)\\w([[:digit:]]+)"
+		SplitString/E=(expr) wName, zPos, vNo
+		vZ = str2num(zPos)
+		sp1_A = sqrt((w0[0][0] - sp1X)^2 + (w0[0][1] - sp1Y)^2 + (vZ - sp1Z)^2)
+		sp1_B = sqrt((w0[1][0] - sp1X)^2 + (w0[1][1] - sp1Y)^2 + (vZ - sp1Z)^2)
+		sp2_A = sqrt((w0[0][0] - sp2X)^2 + (w0[0][1] - sp2Y)^2 + (vZ - sp2Z)^2)
+		sp2_B = sqrt((w0[1][0] - sp2X)^2 + (w0[1][1] - sp2Y)^2 + (vZ - sp2Z)^2)
+		nearest = min(sp1_A,sp1_B,sp2_A,sp2_B)
+		if(nearest == sp1_A || nearest == sp1_B)
+			pol_Des[i] = 1
+			if(sp1_A >= sp1_B)
+				Reverse/DIM=0 w0
+				pol_Rev[i] = 1
+			else
+				pol_Rev[i] = 0
+			endif
+			ModifyGraph/W=allPlot rgb($wName)=(16385,16388,65535)
+		else
+			pol_Des[i] = 2
+			if(sp2_A >= sp2_B)
+				Reverse/DIM=0 w0
+				pol_Rev[i] = 1
+			else
+				pol_Rev[i] = 0
+			endif
+			ModifyGraph/W=allPlot rgb($wName)=(16385,65535,16388)
+		endif
+	endfor
+	
 End
