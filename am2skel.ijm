@@ -31,6 +31,8 @@ function am2TIFFs(dir1, filename)
 	list2 = getFileList(dir3);
 	dir4 = dir1 + "skel/";
 	File.makeDirectory(dir4);
+	dir5 = dir4 + st2;
+	File.makeDirectory(dir5);
 	
 	setBatchMode(true);
 	for (i = 0; i < list2.length; i++)
@@ -47,7 +49,6 @@ function TIFF2skel(dir3, filename)
 	st3 = replace(filename,".tif","");
 	newname = st3 + "-labeled-skeletons";
 	selectWindow(newname);
-	
-    saveAs("Tiff", dir4 + newname);
+    saveAs("Tiff", dir5 + newname);
     close();
 }
