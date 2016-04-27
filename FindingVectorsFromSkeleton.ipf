@@ -123,17 +123,20 @@ Function TheFitter(xW,yW,i)
 	Variable i
 	NVAR /Z nZ = fileIndex	// global variable
 	NVAR /Z xySize = gpxSize
+	WAVE /Z W_coef
 	
 	CurveFit/Q/NTHR=0 line, yW /X=xW /D
 	WAVE /Z fit_tempYw
-	String wName = "vec_" + num2str(nZ) + "_" + num2str(i) // replace 3 with nZ
-	Make/O/N=(2,2) $wName
-	Wave m1 = $wName
-	m1[0][0] = leftx(fit_tempYw) * xySize
-	m1[1][0] = rightx(fit_tempYw) * xySize
-	m1[0][1] = fit_tempYw[0] * xySize
-	m1[1][1] = fit_tempYw[1] * xySize
-	AppendToGraph/W=allPlot m1[][1] vs m1[][0]
+	if(sum(W_coef) != 0)
+		String wName = "vec_" + num2str(nZ) + "_" + num2str(i)
+		Make/O/N=(2,2) $wName
+		Wave m1 = $wName
+		m1[0][0] = (wavemin(xW)) * xySize
+		m1[1][0] = (wavemax(xW)) * xySize
+		m1[0][1] = (W_coef[0] + (wavemin(xW) * W_coef[1])) * xySize
+		m1[1][1] = (W_coef[0] + (wavemax(xW) * W_coef[1])) * xySize
+		AppendToGraph/W=allPlot m1[][1] vs m1[][0]
+	endif
 	KillWaves fit_tempYw
 End
 
@@ -252,7 +255,7 @@ Function TidyAndReport()
 	AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
 	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
 	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
-
+	ModifyGraph margin=14
 	
 	Duplicate/O pol_Angle pol_Angle_1,pol_Angle_2
 	pol_Angle_1 = (pol_Des == 1) ? pol_Angle_1 : NaN
@@ -263,20 +266,24 @@ Function TidyAndReport()
 	Make/N=360/O pol_Angle_1_Hist
 	Histogram/B={-360,2,360} pol_Angle_1,pol_Angle_1_Hist
 	Display/N=sp1Hist pol_Angle_1_Hist
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Spindle pole 1"
 	Make/N=360/O pol_Angle_2_Hist
 	Histogram/B={-360,2,360} pol_Angle_2,pol_Angle_2_Hist
 	Display/N=sp2Hist pol_Angle_2_Hist
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Spindle pole 2"
 	
 	Concatenate/O {pol_Angle_1,pol_Angle_2}, pol_Angle_all
 	Make/N=360/O pol_angle_all_Hist
 	Histogram/B={-360,2,360} pol_Angle_all,pol_Angle_all_Hist
 	Display/N=allHist pol_Angle_all_Hist
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "All MTs"
 	
 	Duplicate/O pol_Angle_all pol_Angle_all_pos
 	pol_Angle_all_pos = sqrt(pol_Angle_all[p]^2)
 	Make/N=360/O pol_Angle_all_pos_Hist
 	Histogram/B={-360,2,360} pol_Angle_all_pos,pol_Angle_all_pos_Hist
 	Display/N=allposHist pol_Angle_all_pos_Hist
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "All MTs reflection"
 	
 	DoWindow /K summaryLayout
 	NewLayout /N=summaryLayout
