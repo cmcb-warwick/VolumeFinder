@@ -250,6 +250,9 @@ Function TidyAndReport()
 	SetAxis/A/R left
 	ModifyGraph width={Plan,1,bottom,left}
 	AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
+	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
+	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
+
 	
 	Duplicate/O pol_Angle pol_Angle_1,pol_Angle_2
 	pol_Angle_1 = (pol_Des == 1) ? pol_Angle_1 : NaN
@@ -299,6 +302,7 @@ Function TidyAndReport()
 #endif
 	ModifyLayout units=0
 	ModifyLayout frame=0,trans=1
-	Execute /Q "Tile"
+	Execute /Q "Tile/A=(4,2) sp1Hist,sp2Hist,allHist,allposHist"
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
+	ModifyLayout top(allPlot)=425,width(allPlot)=533,height(allPlot)=392
 End
