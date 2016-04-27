@@ -8,12 +8,10 @@ End
 
 Function MTs2Vectors()
 	Tic()
-	ProcessTIFFs()
-	DoWindow/F allPlot
-	SetAxis/A/R left
-	ModifyGraph width={Plan,1,bottom,left}
+		ProcessTIFFs()
 	Toc()
-	Polarise()
+		Polarise()
+		TidyAndReport()
 End
 
 Function ProcessTIFFs()
@@ -28,6 +26,11 @@ Function ProcessTIFFs()
 		DoWindow/K $name		
 	endfor
 	KillWaves/A/Z
+	
+	String baseName = "GFP_1_12"
+	Prompt baseName, "baseName"
+	DoPrompt "What is the original TIFF stack name", baseName
+	String /G TIFFtitle = baseName
 	
 	Variable pxSize = 12
 	Variable zSize = 60
@@ -237,4 +240,65 @@ Function Polarise()
 			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * ((-pol_Angle[i])/360)),32767)
 		endif
 	endfor
+End
+
+Function TidyAndReport()
+	WAVE spWave,pol_Angle,pol_Des
+	SVAR expCond = TIFFtitle
+	
+	DoWindow/F allPlot
+	SetAxis/A/R left
+	ModifyGraph width={Plan,1,bottom,left}
+	AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
+	
+	Duplicate/O pol_Angle pol_Angle_1,pol_Angle_2
+	pol_Angle_1 = (pol_Des == 1) ? pol_Angle_1 : NaN
+	pol_Angle_2 = (pol_Des == 2) ? pol_Angle_2 : NaN
+	WaveTransform zapnans pol_Angle_1
+	WaveTransform zapnans pol_Angle_2
+	
+	Make/N=360/O pol_Angle_1_Hist
+	Histogram/B={-360,2,360} pol_Angle_1,pol_Angle_1_Hist
+	Display/N=sp1Hist pol_Angle_1_Hist
+	Make/N=360/O pol_Angle_2_Hist
+	Histogram/B={-360,2,360} pol_Angle_2,pol_Angle_2_Hist
+	Display/N=sp2Hist pol_Angle_2_Hist
+	
+	Concatenate/O {pol_Angle_1,pol_Angle_2}, pol_Angle_all
+	Make/N=360/O pol_angle_all_Hist
+	Histogram/B={-360,2,360} pol_Angle_all,pol_Angle_all_Hist
+	Display/N=allHist pol_Angle_all_Hist
+	
+	Duplicate/O pol_Angle_all pol_Angle_all_pos
+	pol_Angle_all_pos = sqrt(pol_Angle_all[p]^2)
+	Make/N=360/O pol_Angle_all_pos_Hist
+	Histogram/B={-360,2,360} pol_Angle_all_pos,pol_Angle_all_pos_Hist
+	Display/N=allposHist pol_Angle_all_pos_Hist
+	
+	DoWindow /K summaryLayout
+	NewLayout /N=summaryLayout
+	AppendLayoutObject /W=summaryLayout graph allPlot
+	
+	String histList = "sp1Hist;sp2Hist;allHist;allposHist;"
+	String histName
+	Variable i
+	
+	for(i = 0; i < ItemsInList(histList); i += 1)
+		histName = StringFromList(i,histList)
+		Label/W=$histName bottom "Relative angle (¡)"
+		Label/W=$histName left "Frequency"
+		ModifyGraph/W=$histName mode=5,hbFill=4
+		AppendLayoutObject /W=summaryLayout graph $histName
+	endfor
+
+	// Tidy report
+	DoWindow /F summaryLayout
+	// in case these are not captured as prefs
+#if igorversion()>=7
+	LayoutPageAction size(-1)=(595, 842), margins(-1)=(18, 18, 18, 18)
+#endif
+	ModifyLayout units=0
+	ModifyLayout frame=0,trans=1
+	Execute /Q "Tile"
+	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
 End
