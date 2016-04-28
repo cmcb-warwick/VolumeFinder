@@ -27,9 +27,25 @@ Function ProcessTIFFs()
 	endfor
 	KillWaves/A/Z
 	
-	String baseName = "GFP_1_12"
-	Prompt baseName, "baseName"
-	DoPrompt "What is the original TIFF stack name", baseName
+	String expDiskFolderName
+	String FileList, ThisFile
+	Variable FileLoop
+	
+	NewPath/O/Q/M="Please find disk folder" ExpDiskFolder
+	if (V_flag!=0)
+		DoAlert 0, "Disk folder error"
+		Return -1
+	endif
+	PathInfo /S ExpDiskFolder
+	ExpDiskFolderName=S_path
+	FileList=IndexedFile(expDiskFolder,-1,".tif")
+	Variable nFiles=ItemsInList(FileList)
+	Variable /G fileIndex
+	ThisFile = StringFromList(0,FileList)
+	String baseName = ReplaceString(".Labels0000-labeled-skeletons.tif",ThisFile,"")
+	
+	Prompt baseName, "Enter baseName"
+	DoPrompt "What is the original TIFF stack name?", baseName
 	String /G TIFFtitle = baseName
 	
 	Variable pxSize = 12
@@ -62,28 +78,14 @@ Function ProcessTIFFs()
 	DoWindow/K allPlot
 	Display /N=allPlot
 	
-	String expDiskFolderName,expDataFileName
-	String FileList, ThisFile
-	Variable FileLoop
-	
-	NewPath/O/Q/M="Please find disk folder" ExpDiskFolder
-	if (V_flag!=0)
-		DoAlert 0, "Disk folder error"
-		Return -1
-	endif
-	PathInfo /S ExpDiskFolder
-	ExpDiskFolderName=S_path
-	FileList=IndexedFile(expDiskFolder,-1,".tif")
-	Variable nFiles=ItemsInList(FileList)
-	Variable /G fileIndex
-	
 	for(FileLoop = 0; FileLoop < nFiles; FileLoop += 1)
 		ThisFile=StringFromList(FileLoop, FileList)
-//		expDataFileName=ReplaceString(".tif",ThisFile,"")	// get rid of .tif
 		ImageLoad/O/T=tiff/Q/P=expDiskFolder/N=lImage ThisFile
 		fileIndex = FileLoop * zSize
 		Wave lImage
-		Extractor(lImage)
+		if(sum(lImage) > 0)
+			Extractor(lImage)
+		endif
 		KillWaves /Z lImage // should be killed by Extractor()
 	endfor
 End
@@ -312,4 +314,5 @@ Function TidyAndReport()
 	Execute /Q "Tile/A=(4,2) sp1Hist,sp2Hist,allHist,allposHist"
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
 	ModifyLayout top(allPlot)=425,width(allPlot)=533,height(allPlot)=392
+	SavePICT/E=-2 as expCond + ".pdf"
 End
