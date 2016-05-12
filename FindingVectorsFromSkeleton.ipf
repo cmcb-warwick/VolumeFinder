@@ -316,3 +316,74 @@ Function TidyAndReport()
 	ModifyLayout top(allPlot)=425,width(allPlot)=533,height(allPlot)=392
 	SavePICT/E=-2 as expCond + ".pdf"
 End
+
+Function seg2seg(m0,m1)
+	Wave m0,m1
+	MatrixOp/O matP = row(m0,0)
+	MatrixOp/O matQ = row(m0,1)
+	MatrixOp/O matR = row(m1,0)
+	MatrixOp/O matS = row(m1,1)
+	
+	Variable vSmall = 0.00001
+	
+	MatrixOP/O mat_u = matQ - matP
+   MatrixOP/O mat_v = matS - matR
+   MatrixOP/O mat_w = matP - matR
+   Variable aa = MatrixDot(mat_u,mat_u) // always >= 0
+   Variable bb = MatrixDot(mat_u,mat_v)
+   Variable cc = MatrixDot(mat_v,mat_v) // always >= 0
+   Variable dd = MatrixDot(mat_u,mat_w)
+   Variable ee = MatrixDot(mat_v,mat_w)
+   Variable bigD = aa*cc - bb*bb	//always >= 0
+   Variable sc, sN, sD = bigD 	// sc = sN / sD, default sD = D >= 0
+   Variable tc, tN, tD = bigD	// tc = tN / tD, default tD = D >= 0
+	// compute the line parameters of the two closest points
+	if (bigD < vSmall)  // the lines are almost parallel
+		sN = 0         // force using point P0 on segment S1
+		sD = 1        // to prevent possible division by 0.0 later
+		tN = ee
+		tD = cc
+    else                 // get the closest points on the infinite lines
+		sN = (bb*ee - cc*dd)
+		tN = (aa*ee - bb*dd)
+		if (sN < 0)       // sc < 0 => the s=0 edge is visible
+			sN = 0
+			tN = ee
+			tD = cc
+		elseif (sN > sD) // sc > 1  => the s=1 edge is visible
+			sN = sD
+			tN = ee + bb
+			tD = cc
+		endif
+	endif
+
+	if (tN < 0)            // tc < 0 => the t=0 edge is visible
+		tN = 0
+		// recompute sc for this edge
+		if (-dd < 0)
+			sN = 0
+		elseif (-dd > aa)
+			sN = sD
+		else
+			sN = -dd
+			sD = aa
+		endif	
+	elseif (tN > tD)      // tc > 1  => the t=1 edge is visible
+		tN = tD
+		// recompute sc for this edge
+		if ((-dd + bb) < 0)
+			sN = 0
+		elseif ((-dd + bb) > aa)
+			sN = sD
+		else
+			sN = (-dd +  bb)
+			sD = aa
+		endif
+    endif
+	// finally do the division to get sc and tc
+	sc = (abs(sN) < vSmall ? 0 : sN / sD)
+	tc = (abs(tN) < vSmall ? 0 : tN / tD)
+	// get the difference of the two closest points
+	MatrixOp/O matdP = mat_w + (sc * mat_u) - (tc * mat_v);  // =  S1(sc) - S2(tc)
+	Return norm(matdP)   // return the closest distance
+End
