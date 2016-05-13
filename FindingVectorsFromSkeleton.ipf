@@ -11,6 +11,7 @@ Function MTs2Vectors()
 		ProcessTIFFs()
 	Toc()
 		Polarise()
+		segWrapper()
 		TidyAndReport()
 End
 
@@ -55,6 +56,7 @@ Function ProcessTIFFs()
 	Prompt zSize, "Section interval, nm"
 	DoPrompt "Please check", pxSize, zSize
 	Variable /G gpxSize = pxSize
+	Variable /G gzSize = zSize
 	
 	Variable sp1x = 0
 	Variable sp1y = 0
@@ -239,16 +241,12 @@ Function Polarise()
 			CDy=w0[1][1] - w0[0][1]
 			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		endif
-		if(pol_Angle[i] >= 0)
-			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * (pol_Angle[i]/360)),32767)
-		else
-			ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * ((-pol_Angle[i])/360)),32767)
-		endif
+		ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * (abs(pol_Angle[i])/360)),32767)
 	endfor
 End
 
 Function TidyAndReport()
-	WAVE spWave,pol_Angle,pol_Des
+	WAVE spWave,pol_Angle,pol_Des,segAngleWave
 	SVAR expCond = TIFFtitle
 	
 	DoWindow/F allPlot
@@ -258,6 +256,15 @@ Function TidyAndReport()
 	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
 	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
 	ModifyGraph margin=14
+	
+	String histList = "sp1Hist;sp2Hist;allHist;allposHist;segAngleHist;segposHist;"
+	String histName
+	Variable i
+	
+	for(i = 0; i < ItemsInList(histList); i += 1)
+		histName = StringFromList(i,histList)
+		DoWindow/K $histName
+	endfor
 	
 	Duplicate/O pol_Angle pol_Angle_1,pol_Angle_2
 	pol_Angle_1 = (pol_Des == 1) ? pol_Angle_1 : NaN
@@ -281,19 +288,29 @@ Function TidyAndReport()
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "All MTs"
 	
 	Duplicate/O pol_Angle_all pol_Angle_all_pos
-	pol_Angle_all_pos = sqrt(pol_Angle_all[p]^2)
+	pol_Angle_all_pos = abs(pol_Angle_all[p])
 	Make/N=360/O pol_Angle_all_pos_Hist
 	Histogram/B={-360,2,360} pol_Angle_all_pos,pol_Angle_all_pos_Hist
 	Display/N=allposHist pol_Angle_all_pos_Hist
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "All MTs reflection"
 	
+	Duplicate/O segAngleWave segAngleWave_all
+	WaveTransform zapnans segAngleWave_all
+	Make/N=360/O seg_angle_Hist
+	Histogram/B={-360,2,360} segAngleWave_all,seg_angle_Hist
+	Display/N=segAngleHist seg_angle_Hist
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Nearest MT Segments"
+	
+	Duplicate/O segAngleWave_all segAngleWave_all_pos
+	segAngleWave_all_pos = abs(segAngleWave_all[p])
+	Make/N=360/O seg_angle_pos_Hist
+	Histogram/B={-360,2,360} segAngleWave_all_pos,seg_angle_pos_Hist
+	Display/N=segposHist seg_angle_pos_Hist
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Nearest MT segments reflection"
+	
 	DoWindow /K summaryLayout
 	NewLayout /N=summaryLayout
 	AppendLayoutObject /W=summaryLayout graph allPlot
-	
-	String histList = "sp1Hist;sp2Hist;allHist;allposHist;"
-	String histName
-	Variable i
 	
 	for(i = 0; i < ItemsInList(histList); i += 1)
 		histName = StringFromList(i,histList)
@@ -311,18 +328,94 @@ Function TidyAndReport()
 #endif
 	ModifyLayout units=0
 	ModifyLayout frame=0,trans=1
-	Execute /Q "Tile/A=(4,2) sp1Hist,sp2Hist,allHist,allposHist"
+	Execute /Q "Tile/A=(6,2) sp1Hist,sp2Hist,allHist,allposHist,segAngleHist,segposHist"
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
 	ModifyLayout top(allPlot)=425,width(allPlot)=533,height(allPlot)=392
 	SavePICT/E=-2 as expCond + ".pdf"
 End
 
-Function seg2seg(m0,m1)
+Function segWrapper()
+	NVAR/Z nZ = fileIndex
+	NVAR/Z zSize = gzSize
+	if (!NVAR_Exists(zSize))
+		Variable/G gzSize = 60
+	endif
+	NVAR/Z zSize = gzSize
+	
+	String mList = WaveList("vec_*",";","")
+	String matList = mList
+	Variable nVec = ItemsInList(mList)
+	Make/O/T/N=(nVec) segLabelWave=""
+	Make/O/N=(nVec) segLengthWave=NaN
+	Make/O/T/N=(nVec*500) seg1Wave="",seg2Wave=""
+	Make/O/N=(nVec*500) segDistWave=NaN,segAngleWave=NaN
+	String mName,subList,negList,sliceList
+	Variable tempVar
+	String mName0,mName1
+	
+	Variable i,j,k,l=0
+	
+	for(i = 0; i < nVec; i += 1)
+		mName = StringFromList(i,mList)
+		Wave m0 = $mName
+		segLabelWave[i] = mName
+		MatrixOp/FREE tempmatP = row(m0,0)
+		MatrixOp/FREE tempmatQ = row(m0,1)
+		MatrixOP/FREE tempMat = tempmatP - tempmatQ
+		tempVar = norm(tempMat)
+		segLengthWave[i] = tempvar
+		if(tempvar <= 60)
+			matList = RemoveFromList(mName, matList)
+		endif
+	endfor
+	
+	for(i = 0; i < nZ; i += zSize)
+		subList = WaveList("vec_" + num2str(i) + "*",";","")
+		if(ItemsInList(subList) > 1)
+			negList = matList
+			sliceList = matList
+			negList = RemoveFromList(subList,negList)	// remove subList from matList copy, making negative list
+			sliceList = RemoveFromList(negList,sliceList)	//	remove the negative list from matList copy leaving subList >= 60 nm long
+			// is it possible to look ± 1 section?
+			nVec = ItemsInList(sliceList)
+			if(nVec > 1)
+				for(j = 0; j < nVec; j += 1)
+					mName0 = StringFromList(j,sliceList)
+					Wave m0 = $mName0
+					for(k = 0; k < nVec; k += 1)
+						if(j > k)
+							mName1 = StringFromList(k,sliceList)
+							Wave m1 = $mName1
+							seg1Wave[l] = mName0
+							seg2Wave[l] = mName1
+							segDistWave[l] = seg2seg(m0,m1,nZ)
+							if(segDistWave[l] < 80)	//segments that are less than 80 nm are analysed
+								segAngleWave[l] = ssAngle(m0,m1,nZ)
+							else
+								segAngleWave[l] = NaN
+							endif
+							l += 1
+						endif
+					endfor
+				endfor
+			endif
+		endif
+	endfor
+	// trim seg* waves, can't zapnans
+	nVec = numpnts(seg1Wave) // reuse variable
+	DeletePoints l, nVec - l, segLabelWave,segLengthWave,seg1Wave,seg2Wave,segDistWave,segAngleWave
+End
+
+////	@param	m0		matrix wave containing 2D coords for segment 1
+////	@param	m1		matrix wave containing 2D coords for segment 2
+////	@param	nZ		pass Z coord for both segments
+Function seg2seg(m0,m1,nZ)
 	Wave m0,m1
-	MatrixOp/O matP = row(m0,0)
-	MatrixOp/O matQ = row(m0,1)
-	MatrixOp/O matR = row(m1,0)
-	MatrixOp/O matS = row(m1,1)
+	Variable nZ
+	Make/O/D/N=(1,3) matP={{m0[0][0]},{m0[0][1]},{nZ}}
+	Make/O/D/N=(1,3) matQ={{m0[1][0]},{m0[1][1]},{nZ}}
+	Make/O/D/N=(1,3) matR={{m1[0][0]},{m1[0][1]},{nZ}}
+	Make/O/D/N=(1,3) matS={{m1[1][0]},{m1[1][1]},{nZ}}
 	
 	Variable vSmall = 0.00001
 	
@@ -386,4 +479,20 @@ Function seg2seg(m0,m1)
 	// get the difference of the two closest points
 	MatrixOp/O matdP = mat_w + (sc * mat_u) - (tc * mat_v);  // =  S1(sc) - S2(tc)
 	Return norm(matdP)   // return the closest distance
+End
+
+////	@param	m0		matrix wave containing 2D coords for segment 1
+////	@param	m1		matrix wave containing 2D coords for segment 2
+////	@param	nZ		pass Z coord for both segments
+Function ssAngle(m0,m1,nZ)
+	Wave m0,m1
+	Variable nZ // this is passed but not used
+	
+	Variable PQx, RSx, PQy, RSy
+	
+	PQx = m0[1][0] - m0[0][0]
+	RSx = m1[1][0] - m1[0][0]
+	PQy = m0[1][1] - m0[0][1]
+	RSy = m1[1][1] - m1[0][1]
+	Return (atan2(PQy,PQx) - atan2(RSy,RSx)) * (180/pi)	
 End
