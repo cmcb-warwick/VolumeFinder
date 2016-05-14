@@ -58,12 +58,12 @@ Function ProcessTIFFs()
 	Variable /G gpxSize = pxSize
 	Variable /G gzSize = zSize
 	
-	Variable sp1x = 0
-	Variable sp1y = 0
-	Variable sp1z = 0
-	Variable sp2x = 0
+	Variable sp1x = 238
+	Variable sp1y = 747
+	Variable sp1z = 119
+	Variable sp2x = 622
 	Variable sp2y = 0
-	Variable sp2z = 0
+	Variable sp2z = 126
 	
 	Prompt sp1x, "X1"
 	Prompt sp1y, "Y1"
@@ -192,11 +192,15 @@ Function Polarise()
 	Variable sp1_A,sp1_B,sp2_A,sp2_B
 	Variable ABx, CDx, ABy, CDy
 	String wName,expr,zPos,vNo
-	Variable vZ,nearest
+	Variable vZ,nearest,cW
 	Make/O/N=(nVectors)/T pol_Name	// name of vector wave
 	Make/O/N=(nVectors) pol_Des	// which spindle pole is it from
 	Make/O/N=(nVectors) pol_Rev	// did the polarity get reversed?
 	Make/O/N=(nVectors) pol_Angle // what is the angle releative to the spindle axis?
+	Make/O/N=18 rW={257,34952,17476,4369,39321,56797,52428,34952,43690,43690,34952,52428,56797,39321,4369,17476,34952,257}
+	Make/O/N=18 gW={8738,52428,43690,30583,39321,52428,26214,8738,17476,17476,8738,26214,52428,39321,30583,43690,52428,8738}
+	Make/O/N=18 bW={34952,61166,39321,13107,13107,30583,30583,21845,39321,39321,21845,30583,30583,13107,13107,39321,61166,34952}
+
 	
 	Variable i
 	
@@ -241,7 +245,9 @@ Function Polarise()
 			CDy=w0[1][1] - w0[0][1]
 			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		endif
-		ModifyGraph/W=allPlot rgb($wName)=(32767,65535-(65535 * (abs(pol_Angle[i])/360)),32767)
+		
+		cW = floor(abs(pol_Angle[i])/20)
+		ModifyGraph/W=allPlot rgb($wName)=(rW[cW],gW[cW],bW[cW])
 	endfor
 End
 
@@ -256,6 +262,8 @@ Function TidyAndReport()
 	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
 	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
 	ModifyGraph margin=14
+	
+	MakeCirclePlot()
 	
 	String histList = "sp1Hist;sp2Hist;allHist;allposHist;segAngleHist;segposHist;"
 	String histName
@@ -311,6 +319,7 @@ Function TidyAndReport()
 	DoWindow /K summaryLayout
 	NewLayout /N=summaryLayout
 	AppendLayoutObject /W=summaryLayout graph allPlot
+	AppendLayoutObject /W=summaryLayout graph circlePlot
 	
 	for(i = 0; i < ItemsInList(histList); i += 1)
 		histName = StringFromList(i,histList)
@@ -331,6 +340,7 @@ Function TidyAndReport()
 	Execute /Q "Tile/A=(6,2) sp1Hist,sp2Hist,allHist,allposHist,segAngleHist,segposHist"
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
 	ModifyLayout top(allPlot)=425,width(allPlot)=533,height(allPlot)=392
+	ModifyLayout top(circlePlot)=432,left(circlePlot)=442,width(circlePlot)=100,height(circlePlot)=100
 	SavePICT/E=-2 as expCond + ".pdf"
 End
 
@@ -495,4 +505,29 @@ Function ssAngle(m0,m1,nZ)
 	PQy = m0[1][1] - m0[0][1]
 	RSy = m1[1][1] - m1[0][1]
 	Return (atan2(PQy,PQx) - atan2(RSy,RSx)) * (180/pi)	
+End
+
+Function MakeCirclePlot()
+	
+	WAVE/Z rW,gW,bW
+	Make/O/N=(360,2) circleWave=0
+	Make/O/N=(360,3) circleColor
+	Variable i=0
+	
+	for(i = 0; i < 360; i += 1)
+		circleWave[i][0] = sin(i*(pi/180))
+		circleWave[i][1] = cos(i*(pi/180))
+		circleColor[i][0] = rW[floor(i/20)]
+		circleColor[i][1] = gW[floor(i/20)]
+		circleColor[i][2] = bW[floor(i/20)]
+	endfor
+	DoWindow/K circlePlot
+	Display/N=circlePlot circlewave[][1] vs circleWave[][0]
+	DoWindow/F circlePlot
+	ModifyGraph/W=circlePlot zColor(circleWave)={circleColor,*,*,directRGB,0}
+	ModifyGraph/W=circlePlot margin=5,width={Plan,1,bottom,left}
+	ModifyGraph/W=circlePlot noLabel=2,axThick=0
+	ModifyGraph/W=circlePlot mode=3,marker=19
+	SetDrawEnv xcoord= bottom,ycoord= left,linefgc= (65535,0,0),arrow= 1;DelayUpdate
+	DrawLine 0,0,0,1
 End
