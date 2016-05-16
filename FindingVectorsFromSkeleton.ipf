@@ -160,9 +160,6 @@ Function TheFitter(xW,yW,i)
 		AppendToGraph/W=allPlot m1[][1] vs m1[][0]
 	endif
 	KillWaves fit_tempYw
-	ModifyGraph/W=allPlot width={Plan,1,bottom,left}
-	SetAxis/W=allPlot/R left 768*xysize,0
-	SetAxis/W=allPlot bottom 0,768*xysize
 End
 
 Function Polarise()
@@ -240,11 +237,15 @@ Function Polarise()
 End
 
 Function TidyAndReport()
+	NVAR /Z xySize = gpxSize
 	WAVE spWave,pol_Angle,pol_Des,segAngleWave
 	SVAR expCond = TIFFtitle
 	
 	DoWindow/F allPlot
 	AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
+	ModifyGraph/W=allPlot width={Plan,1,bottom,left}
+	SetAxis/W=allPlot/R left 768*xysize,0
+	SetAxis/W=allPlot bottom 0,768*xysize
 	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
 	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
 	ModifyGraph margin=14
