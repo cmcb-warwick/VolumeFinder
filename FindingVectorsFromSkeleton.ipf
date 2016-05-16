@@ -7,15 +7,19 @@ Menu "Macros"
 End
 
 Function MTs2Vectors()
-	ProcessTIFFs()
+	if(ProcessTIFFs() == -1)
+		Print "Error"
+		Return 0
+	endif
+	Variable timer = startmstimer
 	Polarise()
 	segWrapper()
 	TidyAndReport()
+	printf "%g\r", stopmstimer(timer)/1e6
 End
 
 Function ProcessTIFFs()
 	
-	Variable timer = startmstimer
 	// kill all windows and waves before we start
 	String fullList = WinList("*", ";","WIN:3")
 	String name
@@ -33,7 +37,7 @@ Function ProcessTIFFs()
 	
 	NewPath/O/Q/M="Please find disk folder" ExpDiskFolder
 	if (V_flag!=0)
-		DoAlert 0, "Disk folder error"
+		DoAlert 0, "User pressed cancel"
 		Return -1
 	endif
 	PathInfo /S ExpDiskFolder
@@ -47,6 +51,10 @@ Function ProcessTIFFs()
 	Prompt baseName, "Enter baseName"
 	DoPrompt "What is the original TIFF stack name?", baseName
 	String /G TIFFtitle = baseName
+	if (V_flag!=0)
+		DoAlert 0, "User pressed cancel"
+		Return -1
+	endif
 	
 	Variable pxSize = 12
 	Variable zSize = 60
@@ -56,6 +64,10 @@ Function ProcessTIFFs()
 	DoPrompt "Please check", pxSize, zSize
 	Variable /G gpxSize = pxSize
 	Variable /G gzSize = zSize
+	if (V_flag!=0)
+		DoAlert 0, "User pressed cancel"
+		Return -1
+	endif
 	
 	Variable sp1x = 0
 	Variable sp1y = 0
@@ -71,6 +83,12 @@ Function ProcessTIFFs()
 	Prompt sp2y, "Y2"
 	Prompt sp2z, "Z2"
 	DoPrompt "Enter centrosome positions, px", sp1x,sp1y,sp1z, sp2x,sp2y,sp2z
+	if (V_flag!=0)
+		DoAlert 0, "User pressed cancel"
+		Return -1
+	endif
+	
+	Variable timer = startmstimer
 	
 	Make/O spWave={{sp1x,sp2x},{sp1y,sp2y},{sp1z,sp2z}}
 	spWave[][0,1] *= pxSize
@@ -89,7 +107,7 @@ Function ProcessTIFFs()
 		endif
 		KillWaves /Z lImage // should be killed by Extractor()
 	endfor
-	printf "%g", stopmstimer(timer)/1e6
+	printf "%g\r", stopmstimer(timer)/1e6
 End
 
 ////	@param	m0		lImage 2D wave(image)
@@ -142,6 +160,9 @@ Function TheFitter(xW,yW,i)
 		AppendToGraph/W=allPlot m1[][1] vs m1[][0]
 	endif
 	KillWaves fit_tempYw
+	ModifyGraph/W=allPlot width={Plan,1,bottom,left}
+	SetAxis/W=allPlot/R left 768*xysize,0
+	SetAxis/W=allPlot bottom 0,768*xysize
 End
 
 Function Polarise()
@@ -223,8 +244,6 @@ Function TidyAndReport()
 	SVAR expCond = TIFFtitle
 	
 	DoWindow/F allPlot
-	SetAxis/A/R left
-	ModifyGraph width={Plan,1,bottom,left}
 	AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
 	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
 	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
