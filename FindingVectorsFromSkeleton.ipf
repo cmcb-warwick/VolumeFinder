@@ -7,16 +7,15 @@ Menu "Macros"
 End
 
 Function MTs2Vectors()
-	Tic()
-		ProcessTIFFs()
-	Toc()
-		Polarise()
-		segWrapper()
-		TidyAndReport()
+	ProcessTIFFs()
+	Polarise()
+	segWrapper()
+	TidyAndReport()
 End
 
 Function ProcessTIFFs()
 	
+	Variable timer = startmstimer
 	// kill all windows and waves before we start
 	String fullList = WinList("*", ";","WIN:3")
 	String name
@@ -58,12 +57,12 @@ Function ProcessTIFFs()
 	Variable /G gpxSize = pxSize
 	Variable /G gzSize = zSize
 	
-	Variable sp1x = 238
-	Variable sp1y = 747
-	Variable sp1z = 119
-	Variable sp2x = 622
+	Variable sp1x = 0
+	Variable sp1y = 0
+	Variable sp1z = 0
+	Variable sp2x = 0
 	Variable sp2y = 0
-	Variable sp2z = 126
+	Variable sp2z = 0
 	
 	Prompt sp1x, "X1"
 	Prompt sp1y, "Y1"
@@ -90,6 +89,7 @@ Function ProcessTIFFs()
 		endif
 		KillWaves /Z lImage // should be killed by Extractor()
 	endfor
+	printf "%g", stopmstimer(timer)/1e6
 End
 
 ////	@param	m0		lImage 2D wave(image)
@@ -142,39 +142,6 @@ Function TheFitter(xW,yW,i)
 		AppendToGraph/W=allPlot m1[][1] vs m1[][0]
 	endif
 	KillWaves fit_tempYw
-End
-
-Function tic()
-	Variable/G tictoc = startMSTimer
-End
- 
-Function toc()
-	NVAR/Z tictoc
-	Variable ttTime = stopMSTimer(tictoc)
-	Printf "%g seconds\r", (ttTime/1e6)
-	KillVariables/Z tictoc
-End
-
-//
-//Need to deal with wave scaling
-
-Function ScaleIt(xnm,ynm,znm)
-	Variable xnm,ynm,znm
-	//This will scale the points to real world values
-	
-	Variable scale=(xnm*ynm*znm)/1000000	//in µm^3
-	//need to scale MTs in a different way
-	//Works only for MTs 1px wide and not moving in z
-	If(xnm !=ynm)
-		Print "xnm and ynm are not equal. Please check"
-	EndIf
-	Variable MTscale=xnm*((PI*12.5)^2)
-	
-	Wave nPointWave,volWave
-	nPointWave *=MTscale
-	volWave *=scale
-	Label /W=MTvol bottom, "Point Volume (µm\S3\M)"
-	Label /W=spindlevol bottom, "Hull Volume (µm\S3\M)"	
 End
 
 Function Polarise()
