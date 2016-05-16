@@ -186,7 +186,6 @@ Function Polarise()
 	Make/O/N=18 gW={8738,52428,43690,30583,39321,52428,26214,8738,17476,17476,8738,26214,52428,39321,30583,43690,52428,8738}
 	Make/O/N=18 bW={34952,61166,39321,13107,13107,30583,30583,21845,39321,39321,21845,30583,30583,13107,13107,39321,61166,34952}
 
-	
 	Variable i
 	
 	for(i = 0; i < nVectors; i += 1)
@@ -232,7 +231,11 @@ Function Polarise()
 		endif
 		
 		cW = floor(abs(pol_Angle[i])/20)
-		ModifyGraph/W=allPlot rgb($wName)=(rW[cW],gW[cW],bW[cW])
+		if(numtype(cW) == 2)
+			RemoveFromGraph/W=allplot $wName
+		else
+			ModifyGraph/W=allPlot rgb($wName)=(rW[cW],gW[cW],bW[cW])
+		endif
 	endfor
 End
 
