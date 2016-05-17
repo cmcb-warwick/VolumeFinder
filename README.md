@@ -4,7 +4,7 @@ This repo has procedures for volume analysis and spatial statistics of 3D point 
 Two FIJI/Igor paired scripts represent two workflows
 
 1. <code>VolumeFinder.ipf</code> & <code>amThreshTiff.ijm</code>
-2. <code>FindingVectorsFromSkeleton.ipf</code> & <code>BathSkeletonAnalysis.ijm</code>
+2. <code>FindingVectorsFromSkeleton.ipf</code> & <code>am2skel.ijm</code>
 
 ###Volume analysis
 This code is to measure the density of microtubules in a stack of TIFFs. Microtubules are first segmented in Amira and then converted to TIFFs using a FIJI macro. Finally, Igor will work out the volume of the microtubules as a density of the volume in which they are contained. 
@@ -22,4 +22,8 @@ Caution:
 * Option 0 is the most straightforward, but is very slow. Benchmarking with <code>tic()</code> <code>toc()</code> timed a complicated data set (768 x 768 x 500, 1.2 x 10^6 points) at ~3 h on a Mac Pro 6 Core. Option 2 speeds this to ~90 s.
 
 ###Spatial Statistics
-Again Amira mesh files are used as a starting point. The FIJI script will process these to produce categorised 1 px thick MT trajectories in 2D (one for each z-slice). These are called skeletons. Skeletons are processed by Igor to form 2D vectors which can then be used for spatial statistical analysis. Igor will print a report which shows a comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4: 1 for each pole, 1 for all angles, 1 for all angles, abs values). Two further histograms compare MTs that are longer than 60 nm within 80 nm of other MTs. This is independnet of the spindle axis.
+Again Amira mesh files are used as a starting point. The FIJI script [am2skel.ijm](https://github.com/quantixed/VolumeFinder/blob/master/am2skel.ijm) will process these to first threshold them and make a directory of TIFFs and then produce categorised 1 px thick MT trajectories in 2D (one for each z-slice). These are called skeletons.
+
+Skeletons are processed by Igor <code>FindingVectorsFromSkeleton.ipf</code> to form 2D vectors which can then be used for spatial statistical analysis. Vectors are found by a linear fit to xy coords.
+
+Igor will produce a report which shows a comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4: 1 for each pole, 1 for all angles, 1 for all angles, abs values). Two further histograms compare MTs that are longer than 60 nm within 80 nm of other MTs. This is independnet of the spindle axis.
