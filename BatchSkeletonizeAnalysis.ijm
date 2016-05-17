@@ -12,7 +12,7 @@ setBatchMode(false);
  
 function processFile(dir1, filename)
 { 
-	open(dir1+filename);
+	open(dir1 + filename);
 	run("Skeletonize (2D/3D)");
 	run("Analyze Skeleton (2D/3D)", "prune=[shortest branch] calculate show display");
 	str1 = replace(filename,".tif","");
