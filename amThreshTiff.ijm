@@ -12,7 +12,7 @@ setBatchMode(false);
  
 function processFile(dir1, filename)
 { 
-	st1 = "amirafile=" + dir1 + filename;
+	st1 = "amirafile=[" + dir1 + filename + "]";
 	run("Amira...", st1);
 	setAutoThreshold("Default dark");
 	setThreshold(1, 2);
