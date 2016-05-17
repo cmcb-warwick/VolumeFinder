@@ -16,7 +16,7 @@ setBatchMode(false);
  
 function am2TIFFs(dir1, filename)
 { 
-	st1 = "amirafile=" + dir1 + filename;
+	st1 = "amirafile=[" + dir1 + filename + "]";
 	run("Amira...", st1);
 	setAutoThreshold("Default dark");
 	setThreshold(1, 2);
@@ -25,7 +25,7 @@ function am2TIFFs(dir1, filename)
 	st2 = replace(filename,".Labels.am","/");
 	dir3 = dir2 + st2;
 	File.makeDirectory(dir3);
-	run("Image Sequence... ", "format=TIFF save=" + dir3);
+	run("Image Sequence... ", "format=TIFF save=[" + dir3 + "]");
 	close();
 
 	list2 = getFileList(dir3);
