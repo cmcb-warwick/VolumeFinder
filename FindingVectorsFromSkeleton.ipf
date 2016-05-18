@@ -389,7 +389,7 @@ Function segWrapper()
 							seg1Wave[l] = mName0
 							seg2Wave[l] = mName1
 							segDistWave[l] = seg2seg(m0,m1,nZ)
-							if(segDistWave[l] < 80)	//segments that are less than 80 nm are analysed
+							if(segDistWave[l] < 120)	//segments that are less than 120 nm are analysed
 								segAngleWave[l] = ssAngle(m0,m1,nZ)
 							else
 								segAngleWave[l] = NaN
