@@ -366,6 +366,8 @@ Function segWrapper()
 		segLengthWave[i] = tempvar
 		if(tempvar <= 60)
 			matList = RemoveFromList(mName, matList)
+		elseif(numtype(tempvar)==2)
+			matList = RemoveFromList(mName, matList)
 		endif
 	endfor
 	
