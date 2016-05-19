@@ -26,4 +26,6 @@ Again Amira mesh files are used as a starting point. The FIJI script [am2skel.ij
 
 Skeletons are processed by Igor <code>FindingVectorsFromSkeleton.ipf</code> to form 2D vectors which can then be used for spatial statistical analysis. Vectors are found by a linear fit to xy coords.
 
-Igor will produce a report which shows a comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4: 1 for each pole, 1 for all angles, 1 for all angles, abs values). Two further histograms compare MTs that are longer than 60 nm within 80 nm of other MTs. This is independnet of the spindle axis.
+Igor will produce a report which shows a comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4: 1 for each pole, 1 for all angles, 1 for all angles, abs values). Two further histograms compare MTs that are longer than 60 nm within 80 nm of other MTs. This is independent of the spindle axis.
+
+Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://github.com/quantixed/VolumeFinder/blob/master/SummaryPXP.ipf) to make a summary report of all your data.
