@@ -230,7 +230,13 @@ Function Polarise()
 			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		endif
 		
-		cW = floor(abs(pol_Angle[i])/20)
+		if(pol_Angle[i] > 180)
+			pol_Angle[i] -= 360
+		elseif(pol_angle[i] < -180)
+			pol_Angle[i] += 360
+		endif
+		
+		cW = floor(abs(pol_Angle[i])/10)
 		if(numtype(cW) == 2)
 			RemoveFromGraph/W=allplot $wName
 		else
@@ -490,13 +496,19 @@ Function ssAngle(m0,m1,nZ)
 	Wave m0,m1
 	Variable nZ // this is passed but not used
 	
-	Variable PQx, RSx, PQy, RSy
+	Variable PQx, RSx, PQy, RSy, angle
 	
 	PQx = m0[1][0] - m0[0][0]
 	RSx = m1[1][0] - m1[0][0]
 	PQy = m0[1][1] - m0[0][1]
 	RSy = m1[1][1] - m1[0][1]
-	Return (atan2(PQy,PQx) - atan2(RSy,RSx)) * (180/pi)	
+	angle = (atan2(PQy,PQx) - atan2(RSy,RSx)) * (180/pi)
+	if(angle > 180)
+		angle -= 360
+	elseif(angle < -180)
+		angle += 360
+	endif	
+	Return angle
 End
 
 Function MakeCirclePlot()
@@ -504,14 +516,15 @@ Function MakeCirclePlot()
 	WAVE/Z rW,gW,bW
 	Make/O/N=(360,2) circleWave=0
 	Make/O/N=(360,3) circleColor
-	Variable i=0
+	Variable i=0, j
 	
 	for(i = 0; i < 360; i += 1)
-		circleWave[i][0] = sin(i*(pi/180))
-		circleWave[i][1] = cos(i*(pi/180))
-		circleColor[i][0] = rW[floor(i/20)]
-		circleColor[i][1] = gW[floor(i/20)]
-		circleColor[i][2] = bW[floor(i/20)]
+		j = i - 180
+		circleWave[i][0] = sin(j*(pi/180))
+		circleWave[i][1] = cos(j*(pi/180))
+		circleColor[i][0] = rW[floor(abs(j)/20)]
+		circleColor[i][1] = gW[floor(abs(j)/20)]
+		circleColor[i][2] = bW[floor(abs(j)/20)]
 	endfor
 	DoWindow/K circlePlot
 	Display/N=circlePlot circlewave[][1] vs circleWave[][0]
