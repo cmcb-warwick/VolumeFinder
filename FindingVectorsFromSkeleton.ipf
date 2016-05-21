@@ -182,10 +182,10 @@ Function Polarise()
 	Make/O/N=(nVectors) pol_Des	// which spindle pole is it from
 	Make/O/N=(nVectors) pol_Rev	// did the polarity get reversed?
 	Make/O/N=(nVectors) pol_Angle // what is the angle releative to the spindle axis?
-	Make/O/N=18 rW={257,34952,17476,4369,39321,56797,52428,34952,43690,43690,34952,52428,56797,39321,4369,17476,34952,257}
-	Make/O/N=18 gW={8738,52428,43690,30583,39321,52428,26214,8738,17476,17476,8738,26214,52428,39321,30583,43690,52428,8738}
-	Make/O/N=18 bW={34952,61166,39321,13107,13107,30583,30583,21845,39321,39321,21845,30583,30583,13107,13107,39321,61166,34952}
-
+	// rgb waves as 1D, needs a p=9 point only for 180¡ or -180¡
+	Make/O/N=10 rW={257,34952,17476,4369,39321,56797,52428,34952,43690,43690}
+	Make/O/N=10 gW={8738,52428,43690,30583,39321,52428,26214,8738,17476,17476}
+	Make/O/N=10 bW={34952,61166,39321,13107,13107,30583,30583,21845,39321,39321}
 	Variable i
 	
 	for(i = 0; i < nVectors; i += 1)
@@ -236,7 +236,7 @@ Function Polarise()
 			pol_Angle[i] += 360
 		endif
 		
-		cW = floor(abs(pol_Angle[i])/10)
+		cW = floor(abs(pol_Angle[i])/20)
 		if(numtype(cW) == 2)
 			RemoveFromGraph/W=allplot $wName
 		else
