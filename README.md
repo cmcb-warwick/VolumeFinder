@@ -1,13 +1,13 @@
 # VolumeFinder
-This repo has procedures for volume analysis and spatial statistics of 3D point sets in IgorPro.
+Procedures for volume analysis and spatial statistics of 3D point sets in IgorPro.
 
-Two FIJI/Igor paired scripts represent two workflows
+Two pairs of FIJI/Igor scripts represent two workflows to move segmented models from Amira into Igor and analyse them.
 
 1. <code>VolumeFinder.ipf</code> & <code>amThreshTiff.ijm</code>
 2. <code>FindingVectorsFromSkeleton.ipf</code> & <code>am2skel.ijm</code>
 
 ###Volume analysis
-This code is to measure the density of microtubules in a stack of TIFFs. Microtubules are first segmented in Amira and then converted to TIFFs using a FIJI macro. Finally, Igor will work out the volume of the microtubules as a density of the volume in which they are contained. 
+This code is to measure the density of microtubules in a stack of TIFFs. Microtubules are first segmented in Amira and then converted to TIFFs using a FIJI macro. Finally, Igor will work out the volume of the microtubules as a density of the volume in which they are contained. This was written for analysis of segmented data from SBF/SEM (3View). 
 
 1. Segmentation is first done in Amira. Segmented microtubule labels have the value 2.
 2. Amira files are thresholded and converted to TIFF in FIJI using the [amThreshTiff.ijm](https://github.com/quantixed/VolumeFinder/blob/master/amThreshTiff.ijm) macro
@@ -26,6 +26,6 @@ Again Amira mesh files are used as a starting point. The FIJI script [am2skel.ij
 
 Skeletons are processed by Igor <code>FindingVectorsFromSkeleton.ipf</code> to form 2D vectors which can then be used for spatial statistical analysis. Vectors are found by a linear fit to xy coords.
 
-Igor will produce a report which shows a comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4: 1 for each pole, 1 for all angles, 1 for all angles, abs values). Two further histograms compare MTs that are longer than 60 nm within 80 nm of other MTs. This is independent of the spindle axis.
+Igor will produce a report which shows a comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4 hitsograms: 1 for each pole, 1 for all angles, 1 for all angles, abs() values). Two further histograms compare MTs that are longer than 60 nm are within 80 nm of other MTs. This is independent of the spindle axis.
 
 Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://github.com/quantixed/VolumeFinder/blob/master/SummaryPXP.ipf) to make a summary report of all your data.
