@@ -51,10 +51,12 @@ End
 Function ProcessWaves()
 	SetDataFolder root:data:
 	DFREF dfr = GetDataFolderDFR()
-	String folderName, wName
+	String folderName, wName, graphName
 	Variable numDataFolders = CountObjectsDFR(dfr, 4)
 	Make/O/T/N=(numDataFolders) fileNameWave
 	Make/O/N=(numDataFolders) medianWave,meanWave,sdWave
+	DoWindow /K histLayout
+	NewLayout /N=histLayout
 	
 	Variable i
 		
@@ -67,6 +69,18 @@ Function ProcessWaves()
 		Wavestats/Q w0
 		meanWave[i] = V_avg
 		sdWave[i] = V_sdev
+		
+		wName = ":" + folderName + ":seg_angle_pos_hist"
+		graphName = folderName + "_plot"
+		DoWindow/K $graphName
+		Display/N=$graphName $wName
+		Label bottom "Angle (¡)"
+		Label left "Frequency"
+		TextBox/C/N=text0/F=0/X=0.00/Y=0.00 folderName
+		SetAxis bottom 0,180
+		ModifyGraph mode=7
+		ModifyGraph hbFill=4
+		AppendLayoutObject /W=histLayout graph $graphName
 	endfor
 	
 	//There are 4 windows so...
@@ -134,6 +148,16 @@ Function ProcessWaves()
 	ModifyLayout frame=0,trans=1
 	Execute /Q "Tile/A=(4,2) meanPlot,sdPlot,medianPlot"
 	SavePICT/E=-2 as "report.pdf"
+	// Tidy otherreport
+	DoWindow /F histLayout
+	// in case these are not captured as prefs
+#if igorversion()>=7
+	LayoutPageAction size(-1)=(595, 842), margins(-1)=(18, 18, 18, 18)
+#endif
+	ModifyLayout units=0
+	ModifyLayout frame=0,trans=1
+	Execute /Q "Tile"
+	SavePICT/E=-2 as "hist.pdf"
 	
 	SetDataFolder root:
 End
