@@ -142,10 +142,14 @@ Function GetBx()
 	for(i = 0; i < nWaves; i += 1)
 		wName = StringFromList(i,wList)
 		Wave w0 = $wName
+		Duplicate/O w0, w1
+		w1[][0,1] /=12	// rescale to pixels
+		w1[][2] /=60
 		wName = ReplaceString("_bx",wName,"")
 		labelWave[i] = wName
-		r_p1Wave[i][] = w0[0][q]
-		r_cWave[i][] = w0[1][q]
-		r_p2wave[i][] = w0[2][q]
+		r_p1Wave[i][] = w1[0][q]
+		r_cWave[i][] = w1[1][q]
+		r_p2wave[i][] = w1[2][q]
 	endfor
+	KillWaves w1
 End
