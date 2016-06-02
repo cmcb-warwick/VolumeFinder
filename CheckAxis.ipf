@@ -1,5 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
+// These functions only work with IP7
+// These functions need rewriting after rewrite of FindingVectorsFromSkeletons.ipf
 Function ProcessAll()
 	FindC()
 	DataLoader()
@@ -125,4 +127,25 @@ Function FindP2()
 	String wName = StringFromList(0,WaveList("*",";","WIN:"))
 	Wave w0 = $wName
 	w0[2][] = w0[1][q] + (w0[1][q] - w0[0][q])
+End
+
+Function GetBx()
+	SetDataFolder root:
+	String wList = WaveList("*_bx",";","")
+	String wName
+	Variable nWaves = ItemsInList(wList)
+	Make/O/N=(nWaves)/T labelWave
+	Make/O/N=(nWaves,3) r_p1Wave,r_cWave,r_p2Wave
+	
+	Variable i
+	
+	for(i = 0; i < nWaves; i += 1)
+		wName = StringFromList(i,wList)
+		Wave w0 = $wName
+		wName = ReplaceString("_bx",wName,"")
+		labelWave[i] = wName
+		r_p1Wave[i][] = w0[0][q]
+		r_cWave[i][] = w0[1][q]
+		r_p2wave[i][] = w0[2][q]
+	endfor
 End
