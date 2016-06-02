@@ -143,20 +143,21 @@ Function TheFitter(xW,yW,i)
 	Wave xW
 	Wave yW
 	Variable i
-	NVAR /Z nZ = fileIndex	// global variable
-	NVAR /Z xySize = gpxSize
-	WAVE /Z W_coef
+	NVAR/Z nZ = fileIndex	// global variable
+	NVAR/Z xySize = gpxSize
+	WAVE/Z W_coef
 	
 	CurveFit/Q/NTHR=0 line, yW /X=xW /D
 	WAVE /Z fit_tempYw
 	if(sum(W_coef) != 0)
 		String wName = "vec_" + num2str(nZ) + "_" + num2str(i)
-		Make/O/N=(2,2) $wName
+		Make/O/N=(2,3) $wName
 		Wave m1 = $wName
 		m1[0][0] = (wavemin(xW)) * xySize
 		m1[1][0] = (wavemax(xW)) * xySize
 		m1[0][1] = (W_coef[0] + (wavemin(xW) * W_coef[1])) * xySize
 		m1[1][1] = (W_coef[0] + (wavemax(xW) * W_coef[1])) * xySize
+		m1[][2] = nZ
 		AppendToGraph/W=allPlot m1[][1] vs m1[][0]
 	endif
 	KillWaves fit_tempYw
@@ -176,8 +177,8 @@ Function Polarise()
 	Variable sp2z = spWave[1][2]
 	Variable sp1_A,sp1_B,sp2_A,sp2_B
 	Variable ABx, CDx, ABy, CDy
-	String wName,expr,zPos,vNo
-	Variable vZ,nearest,cW
+	String wName
+	Variable nearest,cW
 	Make/O/N=(nVectors)/T pol_Name	// name of vector wave
 	Make/O/N=(nVectors) pol_Des	// which spindle pole is it from
 	Make/O/N=(nVectors) pol_Rev	// did the polarity get reversed?
@@ -192,18 +193,15 @@ Function Polarise()
 		wName = StringFromList(i,VectorList)
 		Wave w0 = $wName
 		pol_Name[i] = wName
-		expr="vec\\w([[:digit:]]+)\\w([[:digit:]]+)"
-		SplitString/E=(expr) wName, zPos, vNo
-		vZ = str2num(zPos)
-		sp1_A = sqrt((w0[0][0] - sp1X)^2 + (w0[0][1] - sp1Y)^2 + (vZ - sp1Z)^2)
-		sp1_B = sqrt((w0[1][0] - sp1X)^2 + (w0[1][1] - sp1Y)^2 + (vZ - sp1Z)^2)
-		sp2_A = sqrt((w0[0][0] - sp2X)^2 + (w0[0][1] - sp2Y)^2 + (vZ - sp2Z)^2)
-		sp2_B = sqrt((w0[1][0] - sp2X)^2 + (w0[1][1] - sp2Y)^2 + (vZ - sp2Z)^2)
+		sp1_A = sqrt((w0[0][0] - sp1X)^2 + (w0[0][1] - sp1Y)^2 + (w0[0][2] - sp1Z)^2)
+		sp1_B = sqrt((w0[1][0] - sp1X)^2 + (w0[1][1] - sp1Y)^2 + (w0[1][2] - sp1Z)^2)
+		sp2_A = sqrt((w0[0][0] - sp2X)^2 + (w0[0][1] - sp2Y)^2 + (w0[0][2] - sp2Z)^2)
+		sp2_B = sqrt((w0[1][0] - sp2X)^2 + (w0[1][1] - sp2Y)^2 + (w0[1][2] - sp2Z)^2)
 		nearest = min(sp1_A,sp1_B,sp2_A,sp2_B)
 		if(nearest == sp1_A || nearest == sp1_B)
 			pol_Des[i] = 1
 			if(sp1_A >= sp1_B)
-				Reverse/DIM=0 w0
+				Reverse/P/DIM=0 w0
 				pol_Rev[i] = 1
 			else
 				pol_Rev[i] = 0
@@ -384,7 +382,6 @@ Function segWrapper()
 			sliceList = matList
 			negList = RemoveFromList(subList,negList)	// remove subList from matList copy, making negative list
 			sliceList = RemoveFromList(negList,sliceList)	//	remove the negative list from matList copy leaving subList >= 60 nm long
-			// is it possible to look ± 1 section?
 			nVec = ItemsInList(sliceList)
 			if(nVec > 1)
 				for(j = 0; j < nVec; j += 1)
@@ -396,9 +393,9 @@ Function segWrapper()
 							Wave m1 = $mName1
 							seg1Wave[l] = mName0
 							seg2Wave[l] = mName1
-							segDistWave[l] = seg2seg(m0,m1,nZ)
+							segDistWave[l] = seg2seg(m0,m1)
 							if(segDistWave[l] < 120)	//segments that are less than 120 nm are analysed
-								segAngleWave[l] = ssAngle(m0,m1,nZ)
+								segAngleWave[l] = ssAngle(m0,m1)
 							else
 								segAngleWave[l] = NaN
 							endif
@@ -416,14 +413,12 @@ End
 
 ////	@param	m0		matrix wave containing 2D coords for segment 1
 ////	@param	m1		matrix wave containing 2D coords for segment 2
-////	@param	nZ		pass Z coord for both segments
-Function seg2seg(m0,m1,nZ)
+Function seg2seg(m0,m1)
 	Wave m0,m1
-	Variable nZ
-	Make/O/D/N=(1,3) matP={{m0[0][0]},{m0[0][1]},{nZ}}
-	Make/O/D/N=(1,3) matQ={{m0[1][0]},{m0[1][1]},{nZ}}
-	Make/O/D/N=(1,3) matR={{m1[0][0]},{m1[0][1]},{nZ}}
-	Make/O/D/N=(1,3) matS={{m1[1][0]},{m1[1][1]},{nZ}}
+	MatrixOp/O matP = row(m0,0)
+	MatrixOp/O matQ = row(m0,1)
+	MatrixOp/O matR = row(m1,0)
+	MatrixOp/O matS = row(m1,1)
 	
 	Variable vSmall = 0.00001
 	
@@ -491,10 +486,8 @@ End
 
 ////	@param	m0		matrix wave containing 2D coords for segment 1
 ////	@param	m1		matrix wave containing 2D coords for segment 2
-////	@param	nZ		pass Z coord for both segments
-Function ssAngle(m0,m1,nZ)
+Function ssAngle(m0,m1)
 	Wave m0,m1
-	Variable nZ // this is passed but not used
 	
 	Variable PQx, RSx, PQy, RSy, angle
 	
