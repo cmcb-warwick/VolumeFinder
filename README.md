@@ -29,3 +29,5 @@ Skeletons are processed by Igor <code>FindingVectorsFromSkeleton.ipf</code> to f
 Igor will produce a report which shows a comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4 hitsograms: 1 for each pole, 1 for all angles, 1 for all angles, abs() values). Two further histograms compare MTs that are longer than 60 nm are within 80 nm of other MTs. This is independent of the spindle axis.
 
 Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://github.com/quantixed/VolumeFinder/blob/master/SummaryPXP.ipf) to make a summary report of all your data.
+
+A little tool called `checkAxis.ipf` was developed to help visualise and correct spindle axis. This is not intended for general use.
