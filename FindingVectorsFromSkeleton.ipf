@@ -88,17 +88,23 @@ Function ProcessTIFFs()
 		Return -1
 	endif
 	
+	Variable sp1x = 0
+	Variable sp1y = 0
+	Variable sp1z = 250
+	Variable sp2x = 768
+	Variable sp2y = 768
+	Variable sp2z = 250
+	
 	if(cmpstr(userResponse,"yes")==0)
 		FindValue/TEXT=baseName labelWave
 		i = V_Value
+		sp1x = r_p1Wave[i][0]
+		sp1y = r_p1Wave[i][1]
+		sp1z = r_p1Wave[i][2]
+		sp2x = r_p2Wave[i][0]
+		sp2y = r_p2Wave[i][1]
+		sp2z = r_p2Wave[i][2]
 	endif
-	
-	Variable sp1x = r_p1Wave[i][0]
-	Variable sp1y = r_p1Wave[i][1]
-	Variable sp1z = r_p1Wave[i][2]
-	Variable sp2x = r_p2Wave[i][0]
-	Variable sp2y = r_p2Wave[i][1]
-	Variable sp2z = r_p2Wave[i][2]
 	
 	Prompt sp1x, "X1"
 	Prompt sp1y, "Y1"
@@ -368,7 +374,6 @@ Function segWrapper()
 	if (!NVAR_Exists(zSize))
 		Variable/G gzSize = 60
 	endif
-	NVAR/Z zSize = gzSize
 	
 	String mList = WaveList("vec_*",";","")
 	String matList = mList
@@ -433,6 +438,8 @@ Function segWrapper()
 	// trim seg* waves, can't zapnans
 	nVec = numpnts(seg1Wave) // reuse variable
 	DeletePoints l, nVec - l, segLabelWave,segLengthWave,seg1Wave,seg2Wave,segDistWave,segAngleWave
+	
+	elliWrapper(matlist)
 End
 
 ////	@param	m0		matrix wave containing 2D coords for segment 1
@@ -552,4 +559,36 @@ Function MakeCirclePlot()
 	ModifyGraph/W=circlePlot mode=3,marker=19
 	SetDrawEnv xcoord= bottom,ycoord= left,linefgc= (65535,0,0),arrow= 1;DelayUpdate
 	DrawLine 0,0,0,1
+End
+
+////	@param	elliList	list of eligible vector waves
+Function elliWrapper(elliList)
+	String elliList
+	
+	WAVE spWave
+	Variable cx = (spWave[0][0] + spWave[1][0]) / 2
+	Variable cy = (spWave[0][1] + spWave[1][1]) / 2
+	Variable cz = (spWave[0][2] + spWave[1][2]) / 2
+	
+	Variable nVec = ItemsInList(elliList)
+	String mName, newName
+	Variable i
+	
+	for(i = 0; i < nVec; i += 1)
+		mName = StringFromList(i,elliList)
+		Wave m0 = $mName
+		newName = ReplaceString("vec_",mName,"elli_")
+		Duplicate/O m0, $newName
+		Wave m1 = $newName
+		m1[][0] -= cx
+		m1[][1] -= cy
+		m1[][2] -= cz
+	endfor
+	// spwave minus c
+	// find theta and phi for spwave
+	// rotate all points by theta and phi
+	// find midpoint of all MTs
+	// calculate direction vector
+	// calculate actual vector
+	// find angle between the two
 End
