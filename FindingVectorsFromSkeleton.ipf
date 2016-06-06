@@ -31,19 +31,29 @@ Function ProcessTIFFs()
 	endfor
 	KillWaves/A/Z
 	
-	String expDiskFolderName
+	String axisFolderName
 	String FileList, ThisFile
 	Variable FileLoop
 	
-	NewPath/O/Q/M="Please find disk folder" ExpDiskFolder
-	if (V_flag!=0)
+	NewPath/O/Q/M="Folder with axis points" axisFolder
+	if (V_flag != 0)
 		DoAlert 0, "User pressed cancel"
 		Return -1
 	endif
-	PathInfo /S ExpDiskFolder
-	ExpDiskFolderName=S_path
-	FileList=IndexedFile(expDiskFolder,-1,".tif")
-	Variable nFiles=ItemsInList(FileList)
+	LoadWave/W/A/P=axisFolder "labelWave.ibw"
+	LoadWave/W/A/P=axisFolder "r_p1Wave.ibw"
+	LoadWave/W/A/P=axisFolder "r_cWave.ibw"
+	LoadWave/W/A/P=axisFolder "r_p2Wave.ibw"
+	WAVE/T labelWave
+	WAVE r_p1Wave,r_p2Wave
+	
+	NewPath/O/Q/M="Folder with skeletons" ExpDiskFolder
+	if (V_flag != 0)
+		DoAlert 0, "User pressed cancel"
+		Return -1
+	endif
+	FileList = IndexedFile(expDiskFolder,-1,".tif")
+	Variable nFiles = ItemsInList(FileList)
 	Variable /G fileIndex
 	ThisFile = StringFromList(0,FileList)
 	String baseName = ReplaceString(".Labels0000-labeled-skeletons.tif",ThisFile,"")
@@ -69,12 +79,15 @@ Function ProcessTIFFs()
 		Return -1
 	endif
 	
-	Variable sp1x = 0
-	Variable sp1y = 0
-	Variable sp1z = 0
-	Variable sp2x = 0
-	Variable sp2y = 0
-	Variable sp2z = 0
+	FindValue/TEXT=baseName labelWave
+	i = V_Value
+	
+	Variable sp1x = r_p1Wave[i][0]
+	Variable sp1y = r_p1Wave[i][1]
+	Variable sp1z = r_p1Wave[i][2]
+	Variable sp2x = r_p2Wave[i][0]
+	Variable sp2y = r_p2Wave[i][1]
+	Variable sp2z = r_p2Wave[i][2]
 	
 	Prompt sp1x, "X1"
 	Prompt sp1y, "Y1"
@@ -82,7 +95,7 @@ Function ProcessTIFFs()
 	Prompt sp2x, "X2"
 	Prompt sp2y, "Y2"
 	Prompt sp2z, "Z2"
-	DoPrompt "Enter centrosome positions, px", sp1x,sp1y,sp1z, sp2x,sp2y,sp2z
+	DoPrompt "Check centrosome positions, px", sp1x,sp1y,sp1z, sp2x,sp2y,sp2z
 	if (V_flag!=0)
 		DoAlert 0, "User pressed cancel"
 		Return -1
