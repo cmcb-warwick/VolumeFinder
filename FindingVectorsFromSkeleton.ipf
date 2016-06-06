@@ -579,12 +579,19 @@ Function elliWrapper(elliList)
 	Variable wx = e_spWave[0][0]
 	Variable wy = e_spWave[0][1]
 	Variable wz = e_spWave[0][2]
+	// inclination/polar, theta. azimuth, phi
 	Variable theta = acos(wz / (sqrt( (wx^2) + (wy^2) + (wz^2) ) ) )
 	Variable phi = atan2(wy,wx)
 	// subtract c from all points
 	// rotate all points by theta and phi
 	Make/O zRotationMatrix={{cos(phi),-sin(phi),0},{sin(phi),cos(phi),0},{0,0,1}}
 	Make/O yRotationMatrix={{cos(theta),0,sin(theta)},{0,1,0},{-sin(theta),0,cos(theta)}}
+	MatrixMultiply e_spWave, zRotationMatrix
+	Wave M_Product
+	Duplicate/O M_product r_spWave // delete
+	MatrixMultiply M_Product, yRotationMatrix
+	Duplicate/O M_product s_spWave // rename
+	
 	Variable nVec = ItemsInList(elliList)
 	String mName, newName
 	Variable i
