@@ -31,21 +31,30 @@ Function ProcessTIFFs()
 	endfor
 	KillWaves/A/Z
 	
-	String axisFolderName
 	String FileList, ThisFile
 	Variable FileLoop
 	
-	NewPath/O/Q/M="Folder with axis points" axisFolder
-	if (V_flag != 0)
+	String userResponse
+	Prompt userResponse, "Do you have spindle axis waves?", popup, "yes;no;"
+	DoPrompt "Axis definition", userResponse
+	if (V_flag!=0)
 		DoAlert 0, "User pressed cancel"
 		Return -1
 	endif
-	LoadWave/W/A/P=axisFolder "labelWave.ibw"
-	LoadWave/W/A/P=axisFolder "r_p1Wave.ibw"
-	LoadWave/W/A/P=axisFolder "r_cWave.ibw"
-	LoadWave/W/A/P=axisFolder "r_p2Wave.ibw"
-	WAVE/T labelWave
-	WAVE r_p1Wave,r_p2Wave
+	
+	if(cmpstr(userResponse,"yes")==0)
+		NewPath/O/Q/M="Folder with axis points" axisFolder
+		if (V_flag != 0)
+			DoAlert 0, "User pressed cancel"
+			Return -1
+		endif
+		LoadWave/W/H/A/C/P=axisFolder "labelWave.ibw"
+		LoadWave/W/H/A/C/P=axisFolder "r_p1Wave.ibw"
+		LoadWave/W/H/A/C/P=axisFolder "r_cWave.ibw"
+		LoadWave/W/H/A/C/P=axisFolder "r_p2Wave.ibw"
+	endif
+	WAVE/T/Z labelWave
+	WAVE/Z r_p1Wave,r_p2Wave
 	
 	NewPath/O/Q/M="Folder with skeletons" ExpDiskFolder
 	if (V_flag != 0)
