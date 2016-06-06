@@ -88,8 +88,10 @@ Function ProcessTIFFs()
 		Return -1
 	endif
 	
-	FindValue/TEXT=baseName labelWave
-	i = V_Value
+	if(cmpstr(userResponse,"yes")==0)
+		FindValue/TEXT=baseName labelWave
+		i = V_Value
+	endif
 	
 	Variable sp1x = r_p1Wave[i][0]
 	Variable sp1y = r_p1Wave[i][1]
@@ -104,7 +106,7 @@ Function ProcessTIFFs()
 	Prompt sp2x, "X2"
 	Prompt sp2y, "Y2"
 	Prompt sp2z, "Z2"
-	DoPrompt "Check centrosome positions, px", sp1x,sp1y,sp1z, sp2x,sp2y,sp2z
+	DoPrompt "Define centrosome positions, px", sp1x,sp1y,sp1z, sp2x,sp2y,sp2z
 	if (V_flag!=0)
 		DoAlert 0, "User pressed cancel"
 		Return -1
