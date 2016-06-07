@@ -14,8 +14,8 @@ Function MTs2Vectors()
 	Variable timer = startmstimer
 	Polarise()
 	segWrapper()
-	TidyAndReport()
 	printf "%g\r", stopmstimer(timer)/1e6
+	TidyAndReport()
 End
 
 Function ProcessTIFFs()
@@ -275,7 +275,7 @@ End
 
 Function TidyAndReport()
 	NVAR /Z xySize = gpxSize
-	WAVE spWave,pol_Angle,pol_Des,segAngleWave
+	WAVE spWave,pol_Angle,pol_Des,segAngleWave,e_angleWave
 	SVAR expCond = TIFFtitle
 	
 	DoWindow/F allPlot
@@ -289,7 +289,7 @@ Function TidyAndReport()
 	
 	MakeCirclePlot()
 	
-	String histList = "sp1Hist;sp2Hist;allHist;allposHist;segAngleHist;segposHist;"
+	String histList = "sp1Hist;sp2Hist;allHist;allposHist;segAngleHist;segposHist;elliHist;"
 	String histName
 	Variable i
 	
@@ -304,41 +304,53 @@ Function TidyAndReport()
 	WaveTransform zapnans pol_Angle_1
 	WaveTransform zapnans pol_Angle_2
 	
-	Make/N=360/O pol_Angle_1_Hist
-	Histogram/B={-360,2,360} pol_Angle_1,pol_Angle_1_Hist
+	Make/N=180/O pol_Angle_1_Hist
+	Histogram/B={-180,2,180} pol_Angle_1,pol_Angle_1_Hist
 	Display/N=sp1Hist pol_Angle_1_Hist
+	ModifyGraph/W=sp1Hist rgb=(32767,32767,32767)
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Spindle pole 1"
-	Make/N=360/O pol_Angle_2_Hist
-	Histogram/B={-360,2,360} pol_Angle_2,pol_Angle_2_Hist
+	Make/N=180/O pol_Angle_2_Hist
+	Histogram/B={-180,2,180} pol_Angle_2,pol_Angle_2_Hist
 	Display/N=sp2Hist pol_Angle_2_Hist
+	ModifyGraph/W=sp2Hist rgb=(32767,32767,32767)
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Spindle pole 2"
 	
 	Concatenate/O {pol_Angle_1,pol_Angle_2}, pol_Angle_all
-	Make/N=360/O pol_angle_all_Hist
-	Histogram/B={-360,2,360} pol_Angle_all,pol_Angle_all_Hist
+	Make/N=180/O pol_angle_all_Hist
+	Histogram/B={-180,2,180} pol_Angle_all,pol_Angle_all_Hist
 	Display/N=allHist pol_Angle_all_Hist
+	ModifyGraph/W=allHist rgb=(32767,32767,32767)
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "All MTs"
 	
 	Duplicate/O pol_Angle_all pol_Angle_all_pos
 	pol_Angle_all_pos = abs(pol_Angle_all[p])
-	Make/N=360/O pol_Angle_all_pos_Hist
-	Histogram/B={-360,2,360} pol_Angle_all_pos,pol_Angle_all_pos_Hist
+	Make/N=180/O pol_Angle_all_pos_Hist
+	Histogram/B={-180,2,180} pol_Angle_all_pos,pol_Angle_all_pos_Hist
 	Display/N=allposHist pol_Angle_all_pos_Hist
+	ModifyGraph/W=allposHist rgb=(32767,32767,32767)
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "All MTs reflection"
 	
 	Duplicate/O segAngleWave segAngleWave_all
 	WaveTransform zapnans segAngleWave_all
-	Make/N=360/O seg_angle_Hist
-	Histogram/B={-360,2,360} segAngleWave_all,seg_angle_Hist
+	Make/N=180/O seg_angle_Hist
+	Histogram/B={-180,2,180} segAngleWave_all,seg_angle_Hist
 	Display/N=segAngleHist seg_angle_Hist
+	ModifyGraph/W=segAngleHist rgb=(32768,32770,65535)
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Nearest MT Segments"
 	
 	Duplicate/O segAngleWave_all segAngleWave_all_pos
 	segAngleWave_all_pos = abs(segAngleWave_all[p])
-	Make/N=360/O seg_angle_pos_Hist
-	Histogram/B={-360,2,360} segAngleWave_all_pos,seg_angle_pos_Hist
+	Make/N=90/O seg_angle_pos_Hist
+	Histogram/B={0,2,180} segAngleWave_all_pos,seg_angle_pos_Hist
 	Display/N=segposHist seg_angle_pos_Hist
+	ModifyGraph/W=segposHist rgb=(32768,32770,65535)
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Nearest MT segments reflection"
+	
+	Make/N=90/O e_angleWave_Hist
+	Histogram/B={0,2,90} e_angleWave,e_angleWave_Hist
+	Display/N=elliHist e_angleWave_Hist
+	ModifyGraph/W=elliHist rgb=(65535,43688,32768)
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Ellipse comparison"
 	
 	DoWindow /K summaryLayout
 	NewLayout /N=summaryLayout
@@ -361,7 +373,7 @@ Function TidyAndReport()
 #endif
 	ModifyLayout units=0
 	ModifyLayout frame=0,trans=1
-	Execute /Q "Tile/A=(6,2) sp1Hist,sp2Hist,allHist,allposHist,segAngleHist,segposHist"
+	Execute /Q "Tile/A=(6,3) sp1Hist,sp2Hist,allHist,allposHist,segAngleHist,segposHist,elliHist"
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
 	ModifyLayout top(allPlot)=425,width(allPlot)=533,height(allPlot)=392
 	ModifyLayout top(circlePlot)=432,left(circlePlot)=442,width(circlePlot)=100,height(circlePlot)=100
@@ -637,7 +649,6 @@ Function elliWrapper(elliList)
 			// make proposed endpoint then vector
 			Make/O/FREE/N=(1,3) prWave = {{wx},{wy},{zt}}
 			prWave /= rr
-			prWave[0][] += mpWave[0][q]
 			e_prWave[i][] = prWave[0][q]
 			MatrixOp/O/FREE interMat = avWave . prWave
 			e_angleWave[i] = acos(interMat[0])
@@ -648,4 +659,5 @@ Function elliWrapper(elliList)
 			e_angleWave[i] = NaN
 		endif
 	endfor
+	e_angleWave *= (180 / pi)
 End
