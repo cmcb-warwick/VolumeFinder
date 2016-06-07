@@ -566,6 +566,7 @@ Function elliWrapper(elliList)
 	String elliList
 	
 	WAVE spWave
+	// find spindle midpoint
 	Variable cx = (spWave[0][0] + spWave[1][0]) / 2
 	Variable cy = (spWave[0][1] + spWave[1][1]) / 2
 	Variable cz = (spWave[0][2] + spWave[1][2]) / 2
@@ -589,10 +590,16 @@ Function elliWrapper(elliList)
 	Wave M_Product
 	MatrixMultiply M_Product, yRotationMatrix
 	Duplicate/O M_Product r_spWave
-	// subtract c from all points
-	// rotate all points by theta and phi
+	// determine length c (point c to point p1) 
+	Variable cc = sqrt(wx^2 + wy^2 + wz^2)
+	
+	// loop through all MT vectors
 	Variable nVec = ItemsInList(elliList)
 	String mName, newName
+	Variable zt
+	Make/O/N=(nVec,3) e_mpWave,e_avWave,w_prWave // midpoint, actual vector, proposed vector
+	Make/O/N=(nVec) e_rWave,e_angleWave
+	Make/O/N=(nVec)/T e_nameWave
 	Variable i
 	
 	for(i = 0; i < nVec; i += 1)
@@ -601,15 +608,38 @@ Function elliWrapper(elliList)
 		newName = ReplaceString("vec_",mName,"elli_")
 		Duplicate/O m0, $newName
 		Wave m1 = $newName
+		// subtract c from all points
 		m1[][0] -= cx
 		m1[][1] -= cy
 		m1[][2] -= cz
+		// rotate all points by theta and phi
 		MatrixMultiply m1, zRotationMatrix
 		MatrixMultiply M_Product, yRotationMatrix
 		Duplicate/O M_Product $newname
-	endfor
-	// find midpoint of all MTs
-	// calculate direction vector
-	// calculate actual vector
-	// find angle between the two
+		e_nameWave[i] = $newName
+		// find midpoint of all MTs
+		wx = (m1[0][0] + m1[1][0]) / 2
+		wy = (m1[0][1] + m1[1][1]) / 2
+		wz = (m1[0][2] + m1[1][2]) / 2
+		e_mpWave[i][] = {wx},{wy},{wz}
+		// transform z coord for mhat(x)
+		zt = (wz^2 - cc^2) / wz
+		// make actual vector
+		e_avWave[i][0] = m1[1][0] - wx
+		e_avWave[i][1] = m1[1][1] - wy
+		e_avWave[i][2] = m1[1][2] - wz
+		e_rWave[i] = sqrt(e_avWave[i][0]^2 + e_avWave[i][1]^2 + e_avWave[i][2]^2)
+		// make proposed endpoint
+		e_prWave[i][] = {wx},{wy},{zt}
+		e_prWave[i][] *= e_rWave[i]
+		// make proposed vector
+		e_prWave[i][0] -= wx
+		e_prWave[i][1] -= wy
+		e_prWave[i][2] -= wz
+		MatrixOp/O/FREE avWave = row(e_avWave,i)
+		MatrixOp/O/FREE prWave = row(e_prWave,i)
+		MatrixOp/O/FREE interMat = avWave . prWave
+		e_angleWave[i] = acos((interMat) / (e_rWave[i]^2))
+	endfor	
+	// deal with the case where x is outside the ellipse
 End
