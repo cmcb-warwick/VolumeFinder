@@ -576,22 +576,21 @@ Function elliWrapper(elliList)
 	e_spWave[][1] -= cy
 	e_spWave[][2] -= cz
 	// find theta and phi for e_spwave
-	Variable wx = e_spWave[0][0]
-	Variable wy = e_spWave[0][1]
-	Variable wz = e_spWave[0][2]
+	Variable wx = e_spWave[0][0] - 0
+	Variable wy = e_spWave[0][1] - 0
+	Variable wz = e_spWave[0][2] - 0
 	// inclination/polar, theta. azimuth, phi
 	Variable theta = acos(wz / (sqrt( (wx^2) + (wy^2) + (wz^2) ) ) )
 	Variable phi = atan2(wy,wx)
-	// subtract c from all points
-	// rotate all points by theta and phi
-	Make/O zRotationMatrix={{cos(phi),-sin(phi),0},{sin(phi),cos(phi),0},{0,0,1}}
-	Make/O yRotationMatrix={{cos(theta),0,sin(theta)},{0,1,0},{-sin(theta),0,cos(theta)}}
+	// rotate spindle axis
+	Make/O zRotationMatrix={{cos(phi),sin(phi),0},{-sin(phi),cos(phi),0},{0,0,1}}
+	Make/O yRotationMatrix={{cos(theta),0,-sin(theta)},{0,1,0},{sin(theta),0,cos(theta)}}
 	MatrixMultiply e_spWave, zRotationMatrix
 	Wave M_Product
-	Duplicate/O M_product r_spWave // delete
 	MatrixMultiply M_Product, yRotationMatrix
-	Duplicate/O M_product s_spWave // rename
-	
+	Duplicate/O M_Product r_spWave
+	// subtract c from all points
+	// rotate all points by theta and phi
 	Variable nVec = ItemsInList(elliList)
 	String mName, newName
 	Variable i
@@ -605,36 +604,12 @@ Function elliWrapper(elliList)
 		m1[][0] -= cx
 		m1[][1] -= cy
 		m1[][2] -= cz
-		MatrixMultiply m1,zRotationMatrix
-		Wave M_Product
-		MatrixMultiply M_Product,yRotationMatrix
-		Duplicate/O M_product $newname
+		MatrixMultiply m1, zRotationMatrix
+		MatrixMultiply M_Product, yRotationMatrix
+		Duplicate/O M_Product $newname
 	endfor
 	// find midpoint of all MTs
 	// calculate direction vector
 	// calculate actual vector
 	// find angle between the two
-End
-
-//Straight(), LowPoint(), SpherCoord() are modified from MTAngleProcedures.ipf
-Function Straight(phi,theta)
-	variable theta,phi //in radians
-
-	String wList=wavelist("MT*",";","")
-	String wName
-	Variable i
-
-	Make/O zRotationMatrix={{cos(phi),-sin(phi),0},{sin(phi),cos(phi),0},{0,0,1}}
-	Make/O yRotationMatrix={{cos(theta),0,sin(theta)},{0,1,0},{-sin(theta),0,cos(theta)}}
-
-	For (i = 0; i < ItemsInList(wList); i += 1)
-		wName = StringFromList(i, wList)
-		String newname="r"+wname
-		Wave/Z w = $wName
-		MatrixMultiply w,zRotationMatrix
-		Wave M_Product
-		MatrixMultiply M_Product,yRotationMatrix
-		Duplicate /o M_product $newname
-	EndFor
-	Killwaves M_Product
 End
