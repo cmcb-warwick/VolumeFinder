@@ -600,6 +600,7 @@ Function elliWrapper(elliList)
 	Make/O/N=(nVec,3) e_mpWave,e_avWave,e_prWave // midpoint, actual vector, proposed vector
 	Make/O/N=(nVec) e_rWave,e_angleWave
 	Make/O/N=(nVec)/T e_nameWave
+	Variable rr // length of vector for normalisation
 	Variable i
 	
 	for(i = 0; i < nVec; i += 1)
@@ -629,15 +630,17 @@ Function elliWrapper(elliList)
 			// make actual vector
 			MatrixOp/O/FREE avWave = row(m1,1)
 			avWave[0][] -= mpWave[0][q]
+			rr = norm(avWave)
+			avWave /= rr // normalise
 			e_avWave[i][] = avWave[0][q]
-			e_rWave[i] = norm(avWave)
+			e_rWave[i] = rr
 			// make proposed endpoint then vector
 			Make/O/FREE/N=(1,3) prWave = {{wx},{wy},{zt}}
-			prWave *= e_rWave[i]
-			prWave[0][] -= mpWave[0][q]
+			prWave /= rr
+			prWave[0][] += mpWave[0][q]
 			e_prWave[i][] = prWave[0][q]
 			MatrixOp/O/FREE interMat = avWave . prWave
-			e_angleWave[i] = acos((interMat[0]) / (e_rWave[i]^2))
+			e_angleWave[i] = acos(interMat[0])
 		else
 			e_avWave[i][] = NaN
 			e_prWave[i][] = NaN
