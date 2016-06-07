@@ -648,6 +648,7 @@ Function elliWrapper(elliList)
 			e_rWave[i] = rr
 			// make proposed endpoint then vector
 			Make/O/FREE/N=(1,3) prWave = {{wx},{wy},{zt}}
+			rr = norm(prWave)
 			prWave /= rr
 			e_prWave[i][] = prWave[0][q]
 			MatrixOp/O/FREE interMat = avWave . prWave
