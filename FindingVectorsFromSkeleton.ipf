@@ -597,7 +597,7 @@ Function elliWrapper(elliList)
 	Variable nVec = ItemsInList(elliList)
 	String mName, newName
 	Variable zt
-	Make/O/N=(nVec,3) e_mpWave,e_avWave,w_prWave // midpoint, actual vector, proposed vector
+	Make/O/N=(nVec,3) e_mpWave,e_avWave,e_prWave // midpoint, actual vector, proposed vector
 	Make/O/N=(nVec) e_rWave,e_angleWave
 	Make/O/N=(nVec)/T e_nameWave
 	Variable i
@@ -616,30 +616,33 @@ Function elliWrapper(elliList)
 		MatrixMultiply m1, zRotationMatrix
 		MatrixMultiply M_Product, yRotationMatrix
 		Duplicate/O M_Product $newname
-		e_nameWave[i] = $newName
+		e_nameWave[i] = newName
 		// find midpoint of all MTs
 		wx = (m1[0][0] + m1[1][0]) / 2
 		wy = (m1[0][1] + m1[1][1]) / 2
 		wz = (m1[0][2] + m1[1][2]) / 2
-		e_mpWave[i][] = {wx},{wy},{wz}
-		// transform z coord for mhat(x)
-		zt = (wz^2 - cc^2) / wz
-		// make actual vector
-		e_avWave[i][0] = m1[1][0] - wx
-		e_avWave[i][1] = m1[1][1] - wy
-		e_avWave[i][2] = m1[1][2] - wz
-		e_rWave[i] = sqrt(e_avWave[i][0]^2 + e_avWave[i][1]^2 + e_avWave[i][2]^2)
-		// make proposed endpoint
-		e_prWave[i][] = {wx},{wy},{zt}
-		e_prWave[i][] *= e_rWave[i]
-		// make proposed vector
-		e_prWave[i][0] -= wx
-		e_prWave[i][1] -= wy
-		e_prWave[i][2] -= wz
-		MatrixOp/O/FREE avWave = row(e_avWave,i)
-		MatrixOp/O/FREE prWave = row(e_prWave,i)
-		MatrixOp/O/FREE interMat = avWave . prWave
-		e_angleWave[i] = acos((interMat) / (e_rWave[i]^2))
-	endfor	
-	// deal with the case where x is outside the ellipse
+		Make/O/FREE/N=(1,3) mpWave = {{wx},{wy},{wz}}
+		if(norm(mpWave) < cc)
+			e_mpWave[i][] = mpWave[0][q]
+			// transform z coord for mhat(x)
+			zt = (wz^2 - cc^2) / wz
+			// make actual vector
+			MatrixOp/O/FREE avWave = row(m1,1)
+			avWave[0][] -= mpWave[0][q]
+			e_avWave[i][] = avWave[0][q]
+			e_rWave[i] = norm(avWave)
+			// make proposed endpoint then vector
+			Make/O/FREE/N=(1,3) prWave = {{wx},{wy},{zt}}
+			prWave *= e_rWave[i]
+			prWave[0][] -= mpWave[0][q]
+			e_prWave[i][] = prWave[0][q]
+			MatrixOp/O/FREE interMat = avWave . prWave
+			e_angleWave[i] = acos((interMat[0]) / (e_rWave[i]^2))
+		else
+			e_avWave[i][] = NaN
+			e_prWave[i][] = NaN
+			e_rWave[i] = NaN
+			e_angleWave[i] = NaN
+		endif
+	endfor
 End
