@@ -35,10 +35,10 @@ Function AngleLoader(cVar)
 		LoadData /L=1/O/P=expDiskFolder/T=$expDataFolderName ThisFile
 		if(cVar == 1)	// get rid of excess waves
 			SetDataFolder $expDataFolderName
-			wList=WaveList("*",";","")
-			excList=WaveList("pol*",";","") + WaveList("seg*",";","")
+			wList = WaveList("*",";","")
+			excList = WaveList("pol*",";","") + WaveList("seg*",";","") + WaveList("e_*",";","")
 			wList = RemoveFromList(excList,wList)
-			nWaves=ItemsInList(wList)
+			nWaves = ItemsInList(wList)
 			for (i = 0; i < nWaves; i += 1)
 				wName = StringFromList(i,wList)
 				KillWaves $wName
@@ -55,8 +55,10 @@ Function ProcessWaves()
 	Variable numDataFolders = CountObjectsDFR(dfr, 4)
 	Make/O/T/N=(numDataFolders) fileNameWave
 	Make/O/N=(numDataFolders) medianWave,meanWave,sdWave
-	DoWindow /K histLayout
-	NewLayout /N=histLayout
+	DoWindow /K histSLayout
+	NewLayout /N=histSLayout
+	DoWindow /K histELayout
+	NewLayout /N=histELayout
 	
 	Variable i
 		
@@ -71,7 +73,7 @@ Function ProcessWaves()
 		sdWave[i] = V_sdev
 		
 		wName = ":" + folderName + ":seg_angle_pos_hist"
-		graphName = folderName + "_plot"
+		graphName = folderName + "_S_plot"
 		DoWindow/K $graphName
 		Display/N=$graphName $wName
 		Label bottom "Angle (¡)"
@@ -80,7 +82,21 @@ Function ProcessWaves()
 		SetAxis bottom 0,180
 		ModifyGraph mode=7
 		ModifyGraph hbFill=4
-		AppendLayoutObject /W=histLayout graph $graphName
+		ModifyGraph rgb=(32768,32770,65535)
+		AppendLayoutObject /W=histSLayout graph $graphName
+		
+		wName = ":" + folderName + ":e_angleWave_Hist"
+		graphName = folderName + "_E_plot"
+		DoWindow/K $graphName
+		Display/N=$graphName $wName
+		Label bottom "Angle (¡)"
+		Label left "Frequency"
+		TextBox/C/N=text0/F=0/X=0.00/Y=0.00 folderName
+		SetAxis bottom 0,180
+		ModifyGraph mode=7
+		ModifyGraph hbFill=4
+		ModifyGraph rgb=(65535,43688,32768)
+		AppendLayoutObject /W=histELayout graph $graphName
 	endfor
 	
 	//There are 4 windows so...
@@ -148,8 +164,8 @@ Function ProcessWaves()
 	ModifyLayout frame=0,trans=1
 	Execute /Q "Tile/A=(4,2) meanPlot,sdPlot,medianPlot"
 	SavePICT/E=-2 as "report.pdf"
-	// Tidy otherreport
-	DoWindow /F histLayout
+	// Tidy other report
+	DoWindow /F histSLayout
 	// in case these are not captured as prefs
 #if igorversion()>=7
 	LayoutPageAction size(-1)=(595, 842), margins(-1)=(18, 18, 18, 18)
@@ -157,7 +173,18 @@ Function ProcessWaves()
 	ModifyLayout units=0
 	ModifyLayout frame=0,trans=1
 	Execute /Q "Tile"
-	SavePICT/E=-2 as "hist.pdf"
+	SavePICT/E=-2 as "histS.pdf"
+	
+	// Tidy other report
+	DoWindow /F histELayout
+	// in case these are not captured as prefs
+#if igorversion()>=7
+	LayoutPageAction size(-1)=(595, 842), margins(-1)=(18, 18, 18, 18)
+#endif
+	ModifyLayout units=0
+	ModifyLayout frame=0,trans=1
+	Execute /Q "Tile"
+	SavePICT/E=-2 as "histE.pdf"
 	
 	SetDataFolder root:
 End
