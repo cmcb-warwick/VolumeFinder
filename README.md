@@ -34,4 +34,8 @@ Igor will produce a report which shows three spatial statistics:
 
 Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://github.com/quantixed/VolumeFinder/blob/master/SummaryPXP.ipf) to make a summary report of all your data.
 
+####Extra code
+
 A little tool called `checkAxis.ipf` was developed to help visualise and correct spindle axis. This is not intended for general use.
+
+A toy called `SimulateEllipses.ipf` was developed to model idealised spindles as ellipsoid tangents.
