@@ -1,17 +1,14 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-////	@param	cammandVar	command variable. Set to 1 to get rid of vec waves etc
-Function AllAnalysis(cVar)
-	Variable cVar
-	AngleLoader(cVar)
+
+Function AllAnalysis()
+	AngleLoader()
 	ProcessWaves()
 End
 
 
 //This function loads all the the waves from different Igor pxps in a directory
-////	@param	cammandVar	command variable. Set to 1 to get rid of vec waves etc
-Function AngleLoader(cVar)
-	Variable cVar
+Function AngleLoader()
 	
 	NewDataFolder/O/S root:data
 	
@@ -33,18 +30,16 @@ Function AngleLoader(cVar)
 		ThisFile=StringFromList(FileLoop, FileList)
 		expDataFolderName=ReplaceString(".pxp",ThisFile,"")	//get rid of .pxp
 		LoadData /L=1/O/P=expDiskFolder/T=$expDataFolderName ThisFile
-		if(cVar == 1)	// get rid of excess waves
-			SetDataFolder $expDataFolderName
-			wList = WaveList("*",";","")
-			excList = WaveList("pol*",";","") + WaveList("seg*",";","") + WaveList("e_*",";","")
-			wList = RemoveFromList(excList,wList)
-			nWaves = ItemsInList(wList)
-			for (i = 0; i < nWaves; i += 1)
-				wName = StringFromList(i,wList)
-				KillWaves $wName
-			endfor
-			SetDataFolder root:data:
-		endif
+		SetDataFolder $expDataFolderName
+		wList = WaveList("*",";","")
+		excList = WaveList("pol*",";","") + WaveList("seg*",";","") + WaveList("e_*",";","")
+		wList = RemoveFromList(excList,wList)
+		nWaves = ItemsInList(wList)
+		for (i = 0; i < nWaves; i += 1)
+			wName = StringFromList(i,wList)
+			KillWaves $wName
+		endfor
+		SetDataFolder root:data:
 	endfor
 End
 
@@ -65,7 +60,7 @@ Function ProcessWaves()
 	for(i = 0; i < numDataFolders; i += 1)
 		folderName = GetIndexedObjNameDFR(dfr, 4, i)
 		fileNameWave[i] = folderName
-		wName = ":" + folderName + ":segAngleWave_all_pos"
+		wName = ":" + folderName + ":e_AngleWave"
 		Wave w0 = $wName
 		medianWave[i] = median(w0)
 		Wavestats/Q w0
@@ -124,6 +119,7 @@ Function ProcessWaves()
 	ModifyGraph swapXY=1
 	SetAxis/A/N=1/E=1 bottom
 	SetAxis/A/R left
+	ModifyGraph rgb=(65535,43688,32768)
 	Label bottom "Mean Angle (¡)"
 	
 	lArea = lIndent + winWidth + 1
@@ -135,6 +131,7 @@ Function ProcessWaves()
 	ModifyGraph swapXY=1
 	SetAxis/A/N=1/E=1 bottom
 	SetAxis/A/R left
+	ModifyGraph rgb=(65535,43688,32768)
 	Label bottom "Standard deviation (¡)"
 	
 	lArea = lArea
@@ -146,6 +143,7 @@ Function ProcessWaves()
 	ModifyGraph swapXY=1
 	SetAxis/A/N=1/E=1 bottom
 	SetAxis/A/R left
+	ModifyGraph rgb=(65535,43688,32768)
 	Label bottom "Median Angle (¡)"
 	//Default Igor Window is 395 x 208 and sits at 35,45,430,253, title bar is 22
 	
