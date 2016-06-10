@@ -105,15 +105,7 @@ Function GizPlotter(folderName)
 End
 
 Function AxisChecker()
-	// User interaction to check spindle axis
-End
-
-// This function makes P2, given points P1 and C.
-Function FindP2()
-	SetDataFolder root:
-	String wName = StringFromList(0,WaveList("*",";","WIN:"))
-	Wave w0 = $wName
-	w0[2][] = w0[1][q] + (w0[1][q] - w0[0][q])
+	DrawBxPanel()
 End
 
 // This is used to export the waves for use by FindingVectorsFromSkeleton.ipf
@@ -142,3 +134,144 @@ Function GetBx()
 	KillWaves w1
 	Save/C labelWave,r_p1Wave,r_cWave,r_p2Wave
 End
+
+Function DrawBxPanel()
+	DoWindow/K CorrectAxis
+	NewPanel/N=CorrectAxis /W=(800,250,1100,440)
+	SetDrawLayer UserBack
+	SetDrawEnv textyjust= 2
+	DrawText 2,2,"Select the bx wave you\rwant to work with"
+	DrawLine 2,35,288,35
+	SetDrawEnv textyjust= 2
+	DrawText 2,46,"Recalculate:"
+	DrawLine 2,95,288,95
+	SetDrawEnv textyjust= 2
+	DrawText 2,113,"Are you finished?"
+	Button button0,pos={4.00,60.00},size={50.00,20.00},proc=ButtonProcP1,title="P1"
+	Button button0,fColor=(65535,0,0)
+	Button button1,pos={64.00,60.00},size={50.00,20.00},proc=ButtonProcC,title="C"
+	Button button2,pos={124.00,60.00},size={50.00,20.00},proc=ButtonProcP2,title="P2"
+	Button button2,fColor=(0,0,65535)
+	Button button3,pos={4.00,140.00},size={70.00,20.00},proc=ButtonProcTW,title="This wave"
+	Button button3,fColor=(65535,43690,0)
+	Button button4,pos={86.00,140.00},size={70.00,20.00},proc=ButtonProcAW,title="All waves"
+	Button button4,fColor=(65535,0,52428)
+	Button button5,pos={185.00,5.00},size={100.00,20.00},proc=ButtonProcBX,title="Pick bx wave"
+End
+
+Function PickBX()
+	SetDataFolder root:
+	DoWindow/K p1cp2
+	String bxName
+	Prompt bxName,"bx Wave",popup WaveList("*_bx",";","")
+	DoPrompt "Pick bx wave", bxName
+	Edit/N=p1cp2/W=(800,45,1160,213) $bxName
+	Print "Editing", bxName
+	if(V_flag != 0)
+		return -1
+	endif
+End
+
+//-------Button Controls----------------//
+Function ButtonProcP1(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+		if(WinType("p1cp2")==0)
+			break
+		endif
+		String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
+		Wave w0 = $wName
+		w0[0][] = w0[1][q] - (w0[2][q] - w0[1][q])
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function ButtonProcC(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+		if(WinType("p1cp2")==0)
+			break
+		endif
+		String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
+		Wave w0 = $wName
+		w0[1][] = (w0[0][q] + w0[2][q]) / 2
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function ButtonProcP2(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+		if(WinType("p1cp2")==0)
+			break
+		endif
+		String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
+		Wave w0 = $wName
+		w0[2][] = w0[1][q] + (w0[1][q] - w0[0][q])
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function ButtonProcTW(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+		SetDataFolder root:
+		DoWindow/K p1cp2
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function ButtonProcAW(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+		SetDataFolder root:
+		DoWindow/K p1cp2
+		GetBx()
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function ButtonProcBX(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+		PickBX()
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+//--------------------------------------
