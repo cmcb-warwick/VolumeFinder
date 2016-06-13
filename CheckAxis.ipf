@@ -157,6 +157,8 @@ Function DrawBxPanel()
 	Button button4,pos={86.00,140.00},size={70.00,20.00},proc=ButtonProcAW,title="All waves"
 	Button button4,fColor=(65535,0,52428)
 	Button button5,pos={185.00,5.00},size={100.00,20.00},proc=ButtonProcBX,title="Pick bx wave"
+	Button button6,pos={213.00,60.00},size={70.00,20.00},proc=ButtonProcSO,title="Start over"
+	Button button6,fColor=(65535,65535,0)
 End
 
 Function PickBX()
@@ -178,12 +180,12 @@ Function ButtonProcP1(ba) : ButtonControl
 
 	switch( ba.eventCode )
 		case 2: // mouse up
-		if(WinType("p1cp2")==0)
-			break
-		endif
-		String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
-		Wave w0 = $wName
-		w0[0][] = w0[1][q] - (w0[2][q] - w0[1][q])
+			if(WinType("p1cp2")==0)
+				break
+			endif
+			String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
+			Wave w0 = $wName
+			w0[0][] = w0[1][q] - (w0[2][q] - w0[1][q])
 			break
 		case -1: // control being killed
 			break
@@ -197,12 +199,12 @@ Function ButtonProcC(ba) : ButtonControl
 
 	switch( ba.eventCode )
 		case 2: // mouse up
-		if(WinType("p1cp2")==0)
-			break
-		endif
-		String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
-		Wave w0 = $wName
-		w0[1][] = (w0[0][q] + w0[2][q]) / 2
+			if(WinType("p1cp2")==0)
+				break
+			endif
+			String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
+			Wave w0 = $wName
+			w0[1][] = (w0[0][q] + w0[2][q]) / 2
 			break
 		case -1: // control being killed
 			break
@@ -216,12 +218,12 @@ Function ButtonProcP2(ba) : ButtonControl
 
 	switch( ba.eventCode )
 		case 2: // mouse up
-		if(WinType("p1cp2")==0)
-			break
-		endif
-		String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
-		Wave w0 = $wName
-		w0[2][] = w0[1][q] + (w0[1][q] - w0[0][q])
+			if(WinType("p1cp2")==0)
+				break
+			endif
+			String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
+			Wave w0 = $wName
+			w0[2][] = w0[1][q] + (w0[1][q] - w0[0][q])
 			break
 		case -1: // control being killed
 			break
@@ -235,8 +237,8 @@ Function ButtonProcTW(ba) : ButtonControl
 
 	switch( ba.eventCode )
 		case 2: // mouse up
-		SetDataFolder root:
-		DoWindow/K p1cp2
+			SetDataFolder root:
+			DoWindow/K p1cp2
 			break
 		case -1: // control being killed
 			break
@@ -250,9 +252,9 @@ Function ButtonProcAW(ba) : ButtonControl
 
 	switch( ba.eventCode )
 		case 2: // mouse up
-		SetDataFolder root:
-		DoWindow/K p1cp2
-		GetBx()
+			SetDataFolder root:
+			DoWindow/K p1cp2
+			GetBx()
 			break
 		case -1: // control being killed
 			break
@@ -266,7 +268,26 @@ Function ButtonProcBX(ba) : ButtonControl
 
 	switch( ba.eventCode )
 		case 2: // mouse up
-		PickBX()
+			PickBX()
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function ButtonProcSO(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+			if(WinType("p1cp2")==0)
+				break
+			endif
+			String wName = StringFromList(0,WaveList("*_bx",";","WIN:p1cp2"))
+			String axName = ReplaceString("_bx",wName,"_ax")
+			Duplicate/O $axName,$wName
 			break
 		case -1: // control being killed
 			break
