@@ -93,7 +93,6 @@ End
 
 
 Function CheckVectors()
-	hgjk
 	Wave e_mpWave, e_avWave, e_prWave
 	Variable nVec = dimsize(e_mpWave,0)
 	Make/O/N=(nVec * 4,3) checkMat
