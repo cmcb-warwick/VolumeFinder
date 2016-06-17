@@ -114,3 +114,21 @@ Function CheckVectors()
 		j += 4
 	endfor
 End
+
+// This function will take the elli3Dre ouput and overwrite individual elli_ waves
+Function OverwriteElliWaves()
+	String elliList = WaveList("elli_*",";","")
+	Variable nWaves = ItemsInList(elliList)
+	String wName
+	Wave m0 = elli3Dre
+	
+	Variable i,j=0
+	
+	for(i = 0; i < nWaves; i += 1)
+		wName = StringFromList(i, elliList)
+		Wave w0 = $wName
+		w0[0][] = m0[j][q]
+		w0[1][] = m0[j+1][q]
+		j +=3
+	endfor
+End
