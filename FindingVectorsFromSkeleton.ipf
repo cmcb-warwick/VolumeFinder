@@ -601,7 +601,7 @@ Function elliWrapper(elliList)
 	MatrixMultiply e_spWave, zRotationMatrix
 	Wave M_Product
 	MatrixMultiply M_Product, yRotationMatrix
-	Duplicate/O M_Product r_spWave
+	Duplicate/O M_Product e_spWave // now rotated (and translated)
 	// determine length c (point c to point p1) 
 	Variable cc = sqrt(wx^2 + wy^2 + wz^2)
 	
@@ -635,30 +635,69 @@ Function elliWrapper(elliList)
 		wy = (m1[0][1] + m1[1][1]) / 2
 		wz = (m1[0][2] + m1[1][2]) / 2
 		Make/O/FREE/N=(1,3) mpWave = {{wx},{wy},{wz}}
+		e_mpWave[i][] = mpWave[0][q]
 		if(norm(mpWave) < cc)
-			e_mpWave[i][] = mpWave[0][q]
 			// transform z coord for mhat(x)
 			zt = (wz^2 - cc^2) / wz
+			Make/O/FREE/N=(1,3) prWave = {{wx},{wy},{zt}}
+			rr = norm(prWave)
+			prWave /= rr
 			// make actual vector
 			MatrixOp/O/FREE avWave = row(m1,1)
 			avWave[0][] -= mpWave[0][q]
 			rr = norm(avWave)
-			avWave /= rr // normalise
-			e_avWave[i][] = avWave[0][q]
+			// make same prediced vector same length as original vector
+			prWave *= rr
+			e_avWave[i][] = avWave[0][q] // real endpoint
 			e_rWave[i] = rr
 			// make proposed endpoint then vector
-			Make/O/FREE/N=(1,3) prWave = {{wx},{wy},{zt}}
-			rr = norm(prWave)
-			prWave /= rr
-			e_prWave[i][] = prWave[0][q]
-			MatrixOp/O/FREE interMat = avWave . prWave
-			e_angleWave[i] = acos(interMat[0])
+			prWave += mpWave[0][q]
+			e_prWave[i][] = prWave[0][q] // model endpoint
 		else
 			e_avWave[i][] = NaN
 			e_prWave[i][] = NaN
 			e_rWave[i] = NaN
-			e_angleWave[i] = NaN
 		endif
 	endfor
+	
+	// rotate midpoints, real and model endpoints
+	Duplicate/O zRotationMatrix, zBackMatrix
+	Duplicate/O yRotationMatrix, yBackMatrix
+	MatrixTranspose zBackMatrix
+	MatrixTranspose yBackMatrix
+	
+	MatrixMultiply mpWave, yBackMatrix
+	Wave M_product
+	MatrixMultiply M_product, zBackMatrix
+	Duplicate/O M_Product, mpWave
+	
+	MatrixMultiply e_avWave, yBackMatrix
+	Wave M_product
+	MatrixMultiply M_product, zBackMatrix
+	Duplicate/O M_Product, e_avWave
+	
+	MatrixMultiply e_prWave, yBackMatrix
+	Wave M_product
+	MatrixMultiply M_product, zBackMatrix
+	Duplicate/O M_Product, e_prWave
+	
+	// subtract mp to get vectors
+	e_avWave[][] -= mpWave[p][q]
+	e_prWave[][] -= mpWave[p][q]
+	// project onto z = 0
+	e_avWave[][2] = 0
+	e_prWave[][2] = 0
+	nVec = DimSize(e_avWave,0)
+	Variable tempvar
+	
+	for(i = 0; i < nVec; i += 1)
+		MatrixOp/O/FREE avWave = row(i,e_avWave)
+		MatrixOp/O/FREE prWave = row(i,e_prWave)
+		MatrixOp/O/FREE interMat = avWave . prWave
+		tempvar = norm(avWave) * norm(prWave)
+		interMat /=tempvar
+		e_angleWave[i] = acos(interMat[0])
+	endfor
+	
 	e_angleWave *= (180 / pi)
 End
