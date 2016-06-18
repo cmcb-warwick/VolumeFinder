@@ -36,6 +36,6 @@ Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://gith
 
 ####Extra code
 
-A little tool called `checkAxis.ipf` was developed to help visualise and correct spindle axis. This is not intended for general use.
+A little tool called `checkAxis.ipf` was developed to help visualise and correct spindle axis in 3D via gizmo. Current workflow is to run the load and analysis and then use checkaxis to refine the axis (for all datasets) and then redo the analysis.
 
 A toy called `SimulateEllipses.ipf` was developed to model idealised spindles as ellipsoid tangents.
