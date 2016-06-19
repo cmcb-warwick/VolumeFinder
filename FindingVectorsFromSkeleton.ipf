@@ -639,7 +639,7 @@ Function elliWrapper()
 		MatrixMultiply M_Product, yRotationMatrix
 		Duplicate/O M_Product $newname
 		e_nameWave[i] = newName
-		// find midpoint of all MTs
+		// find midpoint
 		wx = (m1[0][0] + m1[1][0]) / 2
 		wy = (m1[0][1] + m1[1][1]) / 2
 		wz = (m1[0][2] + m1[1][2]) / 2
@@ -655,12 +655,9 @@ Function elliWrapper()
 			MatrixOp/O/FREE avWave = row(m1,1)
 			avWave[0][] -= mpWave[0][q]
 			rr = norm(avWave)
-			// make same prediced vector same length as original vector
-			prWave *= rr
+			avWave /= rr 
 			e_avWave[i][] = avWave[0][q] // real endpoint
 			e_rWave[i] = rr
-			// make proposed endpoint then vector
-			prWave += mpWave[0][q]
 			e_prWave[i][] = prWave[0][q] // model endpoint
 		else
 			e_avWave[i][] = NaN
@@ -675,24 +672,24 @@ Function elliWrapper()
 	MatrixTranspose zBackMatrix
 	MatrixTranspose yBackMatrix
 	
-	MatrixMultiply mpWave, yBackMatrix
-	Wave M_product
-	MatrixMultiply M_product, zBackMatrix
-	Duplicate/O M_Product, mpWave
+	String eList = "e_mpWave;e_avWave;e_prWave;"
 	
-	MatrixMultiply e_avWave, yBackMatrix
-	Wave M_product
-	MatrixMultiply M_product, zBackMatrix
-	Duplicate/O M_Product, e_avWave
+	for(i = 0; i < 3; i += 1)
+		mName = StringFromList(i, eList)
+		Wave m0 = $mName
+		MatrixMultiply m0, yBackMatrix
+		MatrixMultiply M_product, zBackMatrix
+		Duplicate/O M_Product, $mName
 	
-	MatrixMultiply e_prWave, yBackMatrix
-	Wave M_product
-	MatrixMultiply M_product, zBackMatrix
-	Duplicate/O M_Product, e_prWave
+		// translate back
+		m0[][0] += cx
+		m0[][1] += cy
+		m0[][2] += cz
+	endfor
 	
 	// subtract mp to get vectors
-	e_avWave[][] -= mpWave[p][q]
-	e_prWave[][] -= mpWave[p][q]
+	e_avWave[][] -= e_mpWave[p][q]
+	e_prWave[][] -= e_mpWave[p][q]
 	// project onto z = 0
 	e_avWave[][2] = 0
 	e_prWave[][2] = 0
@@ -704,7 +701,7 @@ Function elliWrapper()
 		MatrixOp/O/FREE prWave = row(i,e_prWave)
 		MatrixOp/O/FREE interMat = avWave . prWave
 		tempvar = norm(avWave) * norm(prWave)
-		interMat /=tempvar
+		//interMat /=tempvar
 		e_angleWave[i] = acos(interMat[0])
 	endfor
 	
