@@ -14,6 +14,7 @@ Function MTs2Vectors()
 	Variable timer = startmstimer
 	Polarise()
 	segWrapper()
+	elliWrapper()
 	printf "%g\r", stopmstimer(timer)/1e6
 	TidyAndReport()
 End
@@ -450,8 +451,6 @@ Function segWrapper()
 	// trim seg* waves, can't zapnans
 	nVec = numpnts(seg1Wave) // reuse variable
 	DeletePoints l, nVec - l, segLabelWave,segLengthWave,seg1Wave,seg2Wave,segDistWave,segAngleWave
-	
-	elliWrapper(matlist)
 End
 
 ////	@param	m0		matrix wave containing 2D coords for segment 1
@@ -573,9 +572,20 @@ Function MakeCirclePlot()
 	DrawLine 0,0,0,1
 End
 
-////	@param	elliList	list of eligible vector waves
-Function elliWrapper(elliList)
-	String elliList
+Function elliWrapper()
+	
+	// first get list of eligible vectors
+	WAVE/Z segLengthWave
+	WAVE/T/Z segLabelWave
+	Variable nWaves = numpnts(segLengthWave)
+	String mName, matList = ""
+	Variable i
+	
+	for(i = 0; i < nWaves; i += 1)
+		if(segLengthWave[i] > 60)
+			matList = matList + segLabelWave[i] + ";"
+		endif
+	endfor
 	
 	WAVE spWave
 	// find spindle midpoint
@@ -601,22 +611,21 @@ Function elliWrapper(elliList)
 	MatrixMultiply e_spWave, zRotationMatrix
 	Wave M_Product
 	MatrixMultiply M_Product, yRotationMatrix
-	Duplicate/O M_Product e_spWave // now rotated (and translated)
+	Duplicate/O M_Product r_spWave
 	// determine length c (point c to point p1) 
 	Variable cc = sqrt(wx^2 + wy^2 + wz^2)
 	
 	// loop through all MT vectors
-	Variable nVec = ItemsInList(elliList)
-	String mName, newName
+	Variable nVec = ItemsInList(matList)
+	String newName
 	Variable zt
 	Make/O/N=(nVec,3) e_mpWave,e_avWave,e_prWave // midpoint, actual vector, proposed vector
 	Make/O/N=(nVec) e_rWave,e_angleWave
 	Make/O/N=(nVec)/T e_nameWave
 	Variable rr // length of vector for normalisation
-	Variable i
 	
 	for(i = 0; i < nVec; i += 1)
-		mName = StringFromList(i,elliList)
+		mName = StringFromList(i,matList)
 		Wave m0 = $mName
 		newName = ReplaceString("vec_",mName,"elli_")
 		Duplicate/O m0, $newName
