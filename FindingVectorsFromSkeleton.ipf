@@ -280,15 +280,24 @@ Function TidyAndReport()
 	SVAR expCond = TIFFtitle
 	
 	DoWindow/F allPlot
-	AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
-	ModifyGraph/W=allPlot width={Plan,1,bottom,left}
-	SetAxis/W=allPlot/R left 768*xysize,0
-	SetAxis/W=allPlot bottom 0,768*xysize
-	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
-	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
-	ModifyGraph margin=14
+	if(V_flag == 1)
+		AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
+		ModifyGraph/W=allPlot width={Plan,1,bottom,left}
+		SetAxis/W=allPlot/R left 768*xysize,0
+		SetAxis/W=allPlot bottom 0,768*xysize
+		ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
+		ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
+		ModifyGraph margin=14
+		SavePICT/WIN=allPlot/E=-5/RES=300/TRAN=1/W=(0,0,392,392) as "Clipboard"
+		LoadPICT/O/Q "Clipboard", allPic
+		DoWindow/K allPlot
+		// note that if user kills allPlot and allPic does not exist, this case is not handled
+	endif
 	
-	MakeCirclePlot()
+	DoWindow/F circlePlot
+	if(V_flag == 0)
+		MakeCirclePlot()
+	endif
 	
 	String histList = "sp1Hist;sp2Hist;allHist;allposHist;segAngleHist;segposHist;elliHist;"
 	String histName
@@ -355,7 +364,7 @@ Function TidyAndReport()
 	
 	DoWindow /K summaryLayout
 	NewLayout /N=summaryLayout
-	AppendLayoutObject /W=summaryLayout graph allPlot
+	AppendLayoutObject /W=summaryLayout picture allPic
 	AppendLayoutObject /W=summaryLayout graph circlePlot
 	
 	for(i = 0; i < ItemsInList(histList); i += 1)
@@ -376,7 +385,7 @@ Function TidyAndReport()
 	ModifyLayout frame=0,trans=1
 	Execute /Q "Tile/A=(6,3) sp1Hist,sp2Hist,allHist,allposHist,segAngleHist,segposHist,elliHist"
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
-	ModifyLayout top(allPlot)=425,width(allPlot)=533,height(allPlot)=392
+	ModifyLayout left(allPic)=36,top(allPic)=425,width(allPic)=392,height(allPic)=392
 	ModifyLayout top(circlePlot)=432,left(circlePlot)=442,width(circlePlot)=100,height(circlePlot)=100
 	SavePICT/E=-2 as expCond + ".pdf"
 End
