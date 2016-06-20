@@ -14,6 +14,7 @@ Function MTs2Vectors()
 	Variable timer = startmstimer
 	Polarise()
 	segWrapper()
+	elliWrapper()
 	printf "%g\r", stopmstimer(timer)/1e6
 	TidyAndReport()
 End
@@ -279,15 +280,24 @@ Function TidyAndReport()
 	SVAR expCond = TIFFtitle
 	
 	DoWindow/F allPlot
-	AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
-	ModifyGraph/W=allPlot width={Plan,1,bottom,left}
-	SetAxis/W=allPlot/R left 768*xysize,0
-	SetAxis/W=allPlot bottom 0,768*xysize
-	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
-	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
-	ModifyGraph margin=14
+	if(V_flag == 1)
+		AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
+		ModifyGraph/W=allPlot width={Plan,1,bottom,left}
+		SetAxis/W=allPlot/R left 768*xysize,0
+		SetAxis/W=allPlot bottom 0,768*xysize
+		ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
+		ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
+		ModifyGraph margin=14
+		SavePICT/WIN=allPlot/E=-5/RES=300/TRAN=1/W=(0,0,392,392) as "Clipboard"
+		LoadPICT/O/Q "Clipboard", allPic
+		KillWindow/Z allPlot
+		// note that if user kills allPlot and allPic does not exist, this case is not handled
+	endif
 	
-	MakeCirclePlot()
+	DoWindow/F circlePlot
+	if(V_flag == 0)
+		MakeCirclePlot()
+	endif
 	
 	String histList = "sp1Hist;sp2Hist;allHist;allposHist;segAngleHist;segposHist;elliHist;"
 	String histName
@@ -341,7 +351,7 @@ Function TidyAndReport()
 	Duplicate/O segAngleWave_all segAngleWave_all_pos
 	segAngleWave_all_pos = abs(segAngleWave_all[p])
 	Make/N=90/O seg_angle_pos_Hist
-	Histogram/B={0,2,180} segAngleWave_all_pos,seg_angle_pos_Hist
+	Histogram/B={0,2,90} segAngleWave_all_pos,seg_angle_pos_Hist
 	Display/N=segposHist seg_angle_pos_Hist
 	ModifyGraph/W=segposHist rgb=(32768,32770,65535)
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Nearest MT segments reflection"
@@ -354,7 +364,7 @@ Function TidyAndReport()
 	
 	DoWindow /K summaryLayout
 	NewLayout /N=summaryLayout
-	AppendLayoutObject /W=summaryLayout graph allPlot
+	AppendLayoutObject /W=summaryLayout picture allPic
 	AppendLayoutObject /W=summaryLayout graph circlePlot
 	
 	for(i = 0; i < ItemsInList(histList); i += 1)
@@ -362,6 +372,7 @@ Function TidyAndReport()
 		Label/W=$histName bottom "Relative angle (¡)"
 		Label/W=$histName left "Frequency"
 		ModifyGraph/W=$histName mode=5,hbFill=4
+		SetAxis/W=$histName/A/N=1/E=1 left
 		AppendLayoutObject /W=summaryLayout graph $histName
 	endfor
 
@@ -375,7 +386,7 @@ Function TidyAndReport()
 	ModifyLayout frame=0,trans=1
 	Execute /Q "Tile/A=(6,3) sp1Hist,sp2Hist,allHist,allposHist,segAngleHist,segposHist,elliHist"
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
-	ModifyLayout top(allPlot)=425,width(allPlot)=533,height(allPlot)=392
+	ModifyLayout left(allPic)=36,top(allPic)=425,width(allPic)=392,height(allPic)=392
 	ModifyLayout top(circlePlot)=432,left(circlePlot)=442,width(circlePlot)=100,height(circlePlot)=100
 	SavePICT/E=-2 as expCond + ".pdf"
 End
@@ -450,8 +461,6 @@ Function segWrapper()
 	// trim seg* waves, can't zapnans
 	nVec = numpnts(seg1Wave) // reuse variable
 	DeletePoints l, nVec - l, segLabelWave,segLengthWave,seg1Wave,seg2Wave,segDistWave,segAngleWave
-	
-	elliWrapper(matlist)
 End
 
 ////	@param	m0		matrix wave containing 2D coords for segment 1
@@ -573,9 +582,20 @@ Function MakeCirclePlot()
 	DrawLine 0,0,0,1
 End
 
-////	@param	elliList	list of eligible vector waves
-Function elliWrapper(elliList)
-	String elliList
+Function elliWrapper()
+	
+	// first get list of eligible vectors
+	WAVE/Z segLengthWave
+	WAVE/T/Z segLabelWave
+	Variable nWaves = numpnts(segLengthWave)
+	String mName, matList = ""
+	Variable i
+	
+	for(i = 0; i < nWaves; i += 1)
+		if(segLengthWave[i] > 60)
+			matList = matList + segLabelWave[i] + ";"
+		endif
+	endfor
 	
 	WAVE spWave
 	// find spindle midpoint
@@ -606,17 +626,16 @@ Function elliWrapper(elliList)
 	Variable cc = sqrt(wx^2 + wy^2 + wz^2)
 	
 	// loop through all MT vectors
-	Variable nVec = ItemsInList(elliList)
-	String mName, newName
+	Variable nVec = ItemsInList(matList)
+	String newName
 	Variable zt
 	Make/O/N=(nVec,3) e_mpWave,e_avWave,e_prWave // midpoint, actual vector, proposed vector
 	Make/O/N=(nVec) e_rWave,e_angleWave
 	Make/O/N=(nVec)/T e_nameWave
 	Variable rr // length of vector for normalisation
-	Variable i
 	
 	for(i = 0; i < nVec; i += 1)
-		mName = StringFromList(i,elliList)
+		mName = StringFromList(i,matList)
 		Wave m0 = $mName
 		newName = ReplaceString("vec_",mName,"elli_")
 		Duplicate/O m0, $newName
@@ -630,13 +649,13 @@ Function elliWrapper(elliList)
 		MatrixMultiply M_Product, yRotationMatrix
 		Duplicate/O M_Product $newname
 		e_nameWave[i] = newName
-		// find midpoint of all MTs
+		// find midpoint
 		wx = (m1[0][0] + m1[1][0]) / 2
 		wy = (m1[0][1] + m1[1][1]) / 2
 		wz = (m1[0][2] + m1[1][2]) / 2
 		Make/O/FREE/N=(1,3) mpWave = {{wx},{wy},{wz}}
+		e_mpWave[i][] = mpWave[0][q]
 		if(norm(mpWave) < cc)
-			e_mpWave[i][] = mpWave[0][q]
 			// transform z coord for mhat(x)
 			zt = (wz^2 - cc^2) / wz
 			// make actual vector
@@ -651,14 +670,118 @@ Function elliWrapper(elliList)
 			rr = norm(prWave)
 			prWave /= rr
 			e_prWave[i][] = prWave[0][q]
-			MatrixOp/O/FREE interMat = avWave . prWave
-			e_angleWave[i] = acos(interMat[0])
 		else
 			e_avWave[i][] = NaN
 			e_prWave[i][] = NaN
 			e_rWave[i] = NaN
-			e_angleWave[i] = NaN
 		endif
 	endfor
+	
+	PutEllipseBack(matList,cx,cy,cz)
+	
+	WAVE/Z vec3D,elli3Dre
+	nVec = dimsize(vec3D,0)
+	Make/O/N=(nVec/3,3) matvA,matvB,mateA,mateB
+	Variable j=0
+	
+	for(i = 0; i < nVec/3; i += 1)
+		matvA[i][] = vec3D[j][q]
+		matvB[i][] = vec3D[j+1][q]
+		mateA[i][] = elli3Dre[j][q]
+		mateB[i][] = elli3Dre[j+1][q]
+		j += 3
+	endfor
+	
+	// subtract to get vectors
+	matvB[][] -= matvA[p][q]
+	mateB[][] -= mateA[p][q]
+	// project onto z = 0
+	matvB[][2] = 0
+	mateB[][2] = 0
+	
+	nVec = dimsize(matvB,0)
+	Variable tempvar
+	
+	for(i = 0; i < nVec; i += 1)
+		MatrixOp/O/FREE avWave = row(matvB,i)
+		MatrixOp/O/FREE prWave = row(mateB,i)
+		MatrixOp/O/FREE interMat = avWave . prWave
+		tempvar = norm(avWave) * norm(prWave)
+		interMat /=tempvar
+		e_angleWave[i] = acos(interMat[0])
+	endfor
 	e_angleWave *= (180 / pi)
+End
+
+////	@param	eList	string with wavelist of eligible vec_ waves
+////	@param	cx		coords for c, the midpoint of p1 and p2
+////	@param	cy		coords for c, the midpoint of p1 and p2
+////	@param	cz		coords for c, the midpoint of p1 and p2
+Function PutEllipseBack(matList,cx,cy,cz)
+	String matList
+	Variable cx,cy,cz
+	
+	String elliList = ReplaceString("vec_",matList,"elli_")
+	String vecList = ReplaceString("elli_",elliList,"vec_")
+	Concatenate/O/NP=0 elliList, elli3D
+	Concatenate/O/NP=0 vecList, vec3D
+	Variable nRows = DimSize(vec3D,0)
+	
+	Variable i,j=0
+
+	for(i = 2; i < (nRows/2) * 3; i += 3)
+		InsertPoints i, 1, vec3D,elli3D
+		elli3D[i][] = NaN
+		vec3D[i][] = NaN
+	endfor
+	
+	WAVE e_avWave,e_rWave,e_mpWave,e_prWave
+	
+	Duplicate/O e_avWave, e_avWave2
+	e_avWave2 *= e_rWave[p]
+	Duplicate/O/FREE e_avWave2, e_avWave21
+	Duplicate/O e_avWave2, e_avWaveEP
+	e_avWaveEP += e_mpWave[p][q] // new endpoint
+	Duplicate/O e_mpWave, e_avWaveSP
+	e_avWaveSP -= e_avWave21[p][q] // new startpoint
+	
+	Duplicate/O e_prWave, e_prWave2
+	e_prWave2 *= e_rWave[p]
+	Duplicate/O/FREE e_prWave2, e_prWave21
+	Duplicate/O e_prWave2, e_prWaveEP
+	e_prWaveEP += e_mpWave[p][q] // new endpoint
+	Duplicate/O e_mpWave, e_prWaveSP
+	e_prWaveSP -= e_prWave21[p][q] // new startpoint
+
+	nRows = DimSize(e_avWave,0)
+	Make/O/N=(nRows*3,3) vec3Dre,elli3Dre
+	
+	for(i = 0; i < nRows *3; i +=3)
+		vec3Dre[i][] = e_avWaveSP[j][q]
+		vec3Dre[i+1][] = e_avWaveEP[j][q]
+		vec3Dre[i+2][] = NaN
+		
+		elli3Dre[i][] = e_prWaveSP[j][q]
+		elli3Dre[i+1][] = e_prWaveEP[j][q]
+		elli3Dre[i+2][] = NaN
+		j += 1
+	endfor
+	
+	Wave zRotationMatrix,yRotationMatrix
+	
+	Duplicate/O zRotationMatrix, zBackMatrix
+	Duplicate/O yRotationMatrix, yBackMatrix
+	MatrixTranspose zBackMatrix
+	MatrixTranspose yBackMatrix
+	
+	MatrixMultiply elli3Dre, yBackMatrix
+	Wave M_product
+	MatrixMultiply M_product, zBackMatrix
+	Duplicate/O M_Product, elli3Dre
+	
+	elli3Dre[][0] += cx
+	elli3Dre[][1] += cy
+	elli3Dre[][2] += cz
+	
+	KillWaves vec3Dre,elli3D,e_avWave2,e_prWave2
 End
