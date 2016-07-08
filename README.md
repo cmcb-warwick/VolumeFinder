@@ -39,3 +39,5 @@ Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://gith
 A little tool called `checkAxis.ipf` was developed to help visualise and correct spindle axis in 3D via gizmo. Current workflow is to run the load and analysis and then use checkaxis to refine the axis (for all datasets) and then redo the analysis.
 
 A toy called `SimulateEllipses.ipf` was developed to model idealised spindles as ellipsoid tangents.
+
+Some extra procedures can be found in `VectorAuxProcs.ipf`. The most useful of these is `CompareAlphaAll()` which is a statistical method to compare two distributions. Comparisons for all combinations of experimental conditions are carried out. Needs e_AngleWaves from various experiments combinining into single *_AngleWave waves per condition.
