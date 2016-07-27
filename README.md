@@ -28,7 +28,7 @@ Skeletons are processed by Igor <code>FindingVectorsFromSkeleton.ipf</code> to f
 
 Igor will produce a report which shows three spatial statistics:
 
-* A comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4 hitsograms: 1 for each pole, 1 for all angles, 1 for all angles, abs() values).
+* A comparison of all MT vectors with the spindle axis (defined by two xyz coords at the start of the procedure). This is colour coded (with a key) to show variance in angle from the spindle axis. Histograms summarise this information (4 histograms: 1 for each pole, 1 for all angles, 1 for all angles, abs() values).
 * Two further histograms compare MTs that are longer than 60 nm are within 80 nm of other MTs. This is independent of the spindle axis.
 * A comparison between the trajectories of MT segments with ellipsoid tangents calculated from an idealised spindle.
 
@@ -36,7 +36,7 @@ Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://gith
 
 ####Extra code
 
-A little tool called `checkAxis.ipf` was developed to help visualise and correct spindle axis in 3D via gizmo. Current workflow is to run the load and analysis and then use checkaxis to refine the axis (for all datasets) and then redo the analysis.
+A little tool called `checkAxis.ipf` was developed to help visualise and correct spindle axis in 3D via gizmo. Current workflow is to: 1. run the load and analysis (using input coordinates for poles); 2. use checkaxis to refine the axis (for all datasets); 3. redo the analysis.
 
 A toy called `SimulateEllipses.ipf` was developed to model idealised spindles as ellipsoid tangents.
 
