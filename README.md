@@ -32,7 +32,7 @@ Igor will produce a report which shows three spatial statistics:
 * Two further histograms compare MTs that are longer than 60 nm are within 80 nm of other MTs. This is independent of the spindle axis.
 * A comparison between the trajectories of MT segments with ellipsoid tangents calculated from an idealised spindle.
 
-Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://github.com/quantixed/VolumeFinder/blob/master/SummaryPXP.ipf) to make a summary report of all your data.
+Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://github.com/quantixed/VolumeFinder/blob/master/SummaryPXP.ipf) to make a summary report of all your data. Compare distributions using the command `MakeComparison()`.
 
 ####Extra code
 
@@ -40,4 +40,4 @@ A little tool called `checkAxis.ipf` was developed to help visualise and correct
 
 A toy called `SimulateEllipses.ipf` was developed to model idealised spindles as ellipsoid tangents.
 
-Some extra procedures can be found in `VectorAuxProcs.ipf`. The most useful of these is `CompareAlphaAll()` which is a statistical method to compare two distributions. Comparisons for all combinations of experimental conditions are carried out. Needs e_AngleWaves from various experiments combinining into single *_AngleWave waves per condition.
+Some extra procedures can be found in `VectorAuxProcs.ipf`. The most useful of these is `CompareAlphaAll()` which is a statistical method to compare two distributions. Comparisons for all combinations of experimental conditions are carried out. Needs e_AngleWaves from various experiments combinining into single *_AngleWave waves per condition. This is now incorporated into `SummaryPXP.ipf`.
