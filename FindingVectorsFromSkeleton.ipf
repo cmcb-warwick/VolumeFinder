@@ -225,7 +225,7 @@ Function Polarise()
 	Make/O/N=(nVectors)/T pol_Name	// name of vector wave
 	Make/O/N=(nVectors) pol_Des	// which spindle pole is it from
 	Make/O/N=(nVectors) pol_Rev	// did the polarity get reversed?
-	Make/O/N=(nVectors) pol_Angle // what is the angle releative to the spindle axis?
+	Make/O/N=(nVectors) pol_Angle // what is the angle relative to the spindle axis?
 	// rgb waves as 1D, needs a p=9 point only for 180¡ or -180¡
 	Make/O/N=10 rW={257,34952,17476,4369,39321,56797,52428,34952,43690,43690}
 	Make/O/N=10 gW={8738,52428,43690,30583,39321,52428,26214,8738,17476,17476}
@@ -251,10 +251,10 @@ Function Polarise()
 			endif
 			// line AB is between spindle poles
 			// line CD is the MT vector
-			ABx=sp2X - sp1X
-			CDx=w0[1][0] - w0[0][0]
-			ABy=sp2Y - sp1Y
-			CDy=w0[1][1] - w0[0][1]
+			ABx = sp2X - sp1X
+			CDx = w0[1][0] - w0[0][0]
+			ABy = sp2Y - sp1Y
+			CDy = w0[1][1] - w0[0][1]
 			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		else
 			pol_Des[i] = 2
@@ -264,10 +264,10 @@ Function Polarise()
 			else
 				pol_Rev[i] = 0
 			endif
-			ABx=sp1X - sp2X
-			CDx=w0[1][0] - w0[0][0]
-			ABy=sp1Y - sp2Y
-			CDy=w0[1][1] - w0[0][1]
+			ABx = sp1X - sp2X
+			CDx = w0[1][0] - w0[0][0]
+			ABy = sp1Y - sp2Y
+			CDy = w0[1][1] - w0[0][1]
 			pol_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
 		endif
 		
