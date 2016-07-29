@@ -51,12 +51,42 @@ Function UseLineModel()
 			line_Angle[i] += 360
 		endif
 	endfor
+	line_Angle[] = abs(line_angle[p])
 	Make/N=90/O line_angle_Hist
 	Histogram/B={0,2,90} line_angle,line_angle_Hist
 	KillWindow/Z lineHist
 	Display/N=lineHist line_angle_Hist
-	ModifyGraph/W=lineHist rgb=(32768,43688,65535)
+	ModifyGraph/W=lineHist rgb=(44253,29492,58982)
 	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Line comparison"
+	Label/W=lineHist bottom "Relative angle (¡)"
+	Label/W=lineHist left "Frequency"
+	ModifyGraph/W=lineHist mode=5,hbFill=4
+	SetAxis/W=lineHist/A/N=1/E=1 left
+	// now compare
+	WAVE/Z/T e_nameWave
+	WAVE/Z e_angleWave
+	nVectors = numpnts(e_nameWave)
+	Make/O/N=(nVectors,2) line_vs_elli
+	
+	for(i = 0; i < nVectors; i += 1)
+		line_vs_elli[i][0] = e_angleWave[i]
+		wName = ReplaceString("elli",e_nameWave[i],"vec")
+		FindValue/TEXT=wName line_Name
+		line_vs_elli[i][1] = line_angle[V_Value]
+	endfor
+	
+	KillWindow/Z lineElliPlot
+	Display/N=lineElliPlot line_vs_elli[][1] vs line_vs_elli[][0]
+	ModifyGraph/W=lineElliPlot rgb=(44253,29492,58982)
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Line vs Ellipse"
+	Label/W=lineElliPlot bottom "Ellipse relative angle (¡)"
+	Label/W=lineElliPlot left "Line relative angle (¡)"
+	ModifyGraph/W=lineElliPlot mode=2
+	SetAxis/W=lineElliPlot left 0,180
+	SetAxis/W=lineElliPlot bottom 0,180
+	ModifyGraph/W=lineElliPlot width={Plan,1,bottom,left}
+	ModifyGraph/W=lineElliPlot mode=2
+	ModifyGraph/W=lineElliPlot grid=1,mirror=1
 End
 
 Function CompareAlphaAll()

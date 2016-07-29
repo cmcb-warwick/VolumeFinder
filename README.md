@@ -40,4 +40,4 @@ A little tool called `checkAxis.ipf` was developed to help visualise and correct
 
 A toy called `SimulateEllipses.ipf` was developed to model idealised spindles as ellipsoid tangents.
 
-Some extra procedures can be found in `VectorAuxProcs.ipf`. The most useful of these is `CompareAlphaAll()` which is a statistical method to compare two distributions. Comparisons for all combinations of experimental conditions are carried out. Needs e_AngleWaves from various experiments combinining into single *_AngleWave waves per condition. This is now incorporated into `SummaryPXP.ipf`.
+Some extra procedures can be found in `VectorAuxProcs.ipf`. The most useful of these is `CompareAlphaAll()` which is a statistical method to compare two distributions. Comparisons for all combinations of experimental conditions are carried out. Needs e_AngleWaves from various experiments combinining into single AngleWave waves per condition. This is now incorporated into `SummaryPXP.ipf`. Another method is `UseLineModel()` which will compare MT segments to a diamond/straight-line model of spindle. Comparison of these angle distributions with those against the ellipsoid tangents is produced.
