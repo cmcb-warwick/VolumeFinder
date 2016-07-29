@@ -1,6 +1,64 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
+Function UseLineModel()
+	WAVE/Z segLengthWave,pol_Des
+	String VectorList = WaveList("vec_*",";","")
+	Variable nVectors = ItemsInList(VectorList)
+	// In vector wave, row 0 and 1 are xyz coords for points A and B
+	// Spindle poles are 1 and 2
+	WAVE spWave
+	Variable sp1x = spWave[0][0]
+	Variable sp1y = spWave[0][1]
+	Variable sp2x = spWave[1][0]
+	Variable sp2y = spWave[1][1]
+	Variable ABx, CDx, ABy, CDy
+	String wName
+	Make/O/N=(nVectors)/T line_Name	// name of vector wave
+	Make/O/N=(nVectors) line_Angle // what is the angle releative to the spindle axis?
+
+	Variable i
+	
+	for(i = 0; i < nVectors; i += 1)
+		wName = StringFromList(i,VectorList)
+		Wave w0 = $wName
+		line_Name[i] = wName
+		// line AB is from nearest spindle pole to midpoint of vector
+		// line CD is the MT vector
+		if(segLengthWave[i] > 60)
+			if(pol_Des[i] == 1)
+				ABx = ((w0[1][0] + w0[0][0]) / 2) - sp1X
+				ABy = ((w0[1][1] + w0[0][1]) / 2) - sp1Y
+				CDx = w0[1][0] - w0[0][0]
+				CDy = w0[1][1] - w0[0][1]
+				line_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
+			elseif(pol_Des[i] == 2)
+				ABx = ((w0[1][0] + w0[0][0]) / 2) - sp2X
+				ABy = ((w0[1][1] + w0[0][1]) / 2) - sp2Y
+				CDx = w0[1][0] - w0[0][0]
+				CDy = w0[1][1] - w0[0][1]
+				line_Angle[i] = (atan2(ABy,ABx) - atan2(CDy,CDx)) * (180/pi)
+			else
+				line_Angle[i] = NaN
+			endif
+		else
+			line_Angle[i] = NaN
+		endif
+		
+		if(line_Angle[i] > 180)
+			line_Angle[i] -= 360
+		elseif(line_angle[i] < -180)
+			line_Angle[i] += 360
+		endif
+	endfor
+	Make/N=90/O line_angle_Hist
+	Histogram/B={0,2,90} line_angle,line_angle_Hist
+	KillWindow/Z lineHist
+	Display/N=lineHist line_angle_Hist
+	ModifyGraph/W=lineHist rgb=(32768,43688,65535)
+	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Line comparison"
+End
+
 Function CompareAlphaAll()
 	String wList = WaveList("*angleWave",";","")
 	Variable nWaves = ItemsInList(wList)
