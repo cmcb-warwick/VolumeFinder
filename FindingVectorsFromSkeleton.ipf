@@ -4,8 +4,11 @@
 // Menu item for easy execution
 Menu "Macros"
 	"MTs2Vectors...",  MTs2Vectors()
+	"Remake Report", TidyAndReport()
+	"Redo Ellipse Comparison", ReDoElliAnalysis()
 End
 
+// Workflow to load and analyse a dataset from set of TIFFs through to report
 Function MTs2Vectors()
 	if(ProcessTIFFs() == -1)
 		Print "Error"
@@ -19,8 +22,14 @@ Function MTs2Vectors()
 	TidyAndReport()
 End
 
+// Workflow to just reanalyse the data
+Function ReDoElliAnalysis()
+	elliWrapper()
+	TidyAndReport()
+End
+
+// Loads and processes a folder of TIFFs
 Function ProcessTIFFs()
-	
 	// kill all windows and waves before we start
 	String fullList = WinList("*", ";","WIN:3")
 	String name
@@ -141,6 +150,7 @@ Function ProcessTIFFs()
 	printf "%g\r", stopmstimer(timer)/1e6
 End
 
+// This pulls the skeletons out from each TIFF and sends to TheFitter
 ////	@param	m0		lImage 2D wave(image)
 Function Extractor(m0)
 	Wave m0
@@ -167,6 +177,7 @@ Function Extractor(m0)
 	KillWaves m0,tempXw,tempYw
 End
 
+// Fits a 2D line to the skeleton and uses this as a vec* wave
 ////	@param	xW		this is the xWave for fitting
 ////	@param	yW		this is the yWave for fitting
 ////	@param	i		passing this variable rather than using another global variable
@@ -194,6 +205,7 @@ Function TheFitter(xW,yW,i)
 	KillWaves fit_tempYw
 End
 
+// Orients vectors away from the nearest spindle pole
 Function Polarise()
 	String VectorList = WaveList("vec_*",";","")
 	Variable nVectors = ItemsInList(VectorList)
@@ -274,6 +286,7 @@ Function Polarise()
 	endfor
 End
 
+// Creates PDF report of all the analysis
 Function TidyAndReport()
 	NVAR /Z xySize = gpxSize
 	WAVE spWave,pol_Angle,pol_Des,segAngleWave,e_angleWave
@@ -391,6 +404,7 @@ Function TidyAndReport()
 	SavePICT/E=-2 as expCond + ".pdf"
 End
 
+// Analysis of short MT segments within 120 nm of one another
 Function segWrapper()
 	NVAR/Z nZ = fileIndex
 	NVAR/Z zSize = gzSize
@@ -411,6 +425,7 @@ Function segWrapper()
 	
 	Variable i,j,k,l=0
 	
+	// exclude short MT segments on the basis of length (60 nm)
 	for(i = 0; i < nVec; i += 1)
 		mName = StringFromList(i,mList)
 		Wave m0 = $mName
@@ -446,7 +461,7 @@ Function segWrapper()
 							seg1Wave[l] = mName0
 							seg2Wave[l] = mName1
 							segDistWave[l] = seg2seg(m0,m1)
-							if(segDistWave[l] < 120)	//segments that are less than 120 nm are analysed
+							if(segDistWave[l] < 120)	// neighbour segments less than 120 nm apart are analysed
 								segAngleWave[l] = ssAngle(m0,m1)
 							else
 								segAngleWave[l] = NaN
@@ -463,6 +478,7 @@ Function segWrapper()
 	DeletePoints l, nVec - l, segLabelWave,segLengthWave,seg1Wave,seg2Wave,segDistWave,segAngleWave
 End
 
+// Function to find the distance between two MT segments (at closest approach)
 ////	@param	m0		matrix wave containing 2D coords for segment 1
 ////	@param	m1		matrix wave containing 2D coords for segment 2
 Function seg2seg(m0,m1)
@@ -536,6 +552,7 @@ Function seg2seg(m0,m1)
 	Return norm(matdP)   // return the closest distance
 End
 
+// Function to find the angle between two MT segments
 ////	@param	m0		matrix wave containing 2D coords for segment 1
 ////	@param	m1		matrix wave containing 2D coords for segment 2
 Function ssAngle(m0,m1)
@@ -582,8 +599,8 @@ Function MakeCirclePlot()
 	DrawLine 0,0,0,1
 End
 
+// Function to compare midpoint of MT segment to ellipsoid tangent
 Function elliWrapper()
-	
 	// first get list of eligible vectors
 	WAVE/Z segLengthWave
 	WAVE/T/Z segLabelWave
@@ -598,7 +615,7 @@ Function elliWrapper()
 	endfor
 	
 	WAVE spWave
-	// find spindle midpoint
+	// find spindle midpoint, c
 	Variable cx = (spWave[0][0] + spWave[1][0]) / 2
 	Variable cy = (spWave[0][1] + spWave[1][1]) / 2
 	Variable cz = (spWave[0][2] + spWave[1][2]) / 2
@@ -655,26 +672,21 @@ Function elliWrapper()
 		wz = (m1[0][2] + m1[1][2]) / 2
 		Make/O/FREE/N=(1,3) mpWave = {{wx},{wy},{wz}}
 		e_mpWave[i][] = mpWave[0][q]
-		if(norm(mpWave) < cc)
-			// transform z coord for mhat(x)
-			zt = (wz^2 - cc^2) / wz
-			// make actual vector
-			MatrixOp/O/FREE avWave = row(m1,1)
-			avWave[0][] -= mpWave[0][q]
-			rr = norm(avWave)
-			avWave /= rr // normalise
-			e_avWave[i][] = avWave[0][q]
-			e_rWave[i] = rr
-			// make proposed endpoint then vector
-			Make/O/FREE/N=(1,3) prWave = {{wx},{wy},{zt}}
-			rr = norm(prWave)
-			prWave /= rr
-			e_prWave[i][] = prWave[0][q]
-		else
-			e_avWave[i][] = NaN
-			e_prWave[i][] = NaN
-			e_rWave[i] = NaN
-		endif
+		// removing this exclusion criteria // if(norm(mpWave) < cc)
+		// transform z coord for mhat(x)
+		zt = (wz^2 - cc^2) / wz
+		// make actual vector
+		MatrixOp/O/FREE avWave = row(m1,1)
+		avWave[0][] -= mpWave[0][q]
+		rr = norm(avWave)
+		avWave /= rr // normalise
+		e_avWave[i][] = avWave[0][q]
+		e_rWave[i] = rr
+		// make proposed endpoint then vector
+		Make/O/FREE/N=(1,3) prWave = {{wx},{wy},{zt}}
+		rr = norm(prWave)
+		prWave /= rr
+		e_prWave[i][] = prWave[0][q]
 	endfor
 	
 	PutEllipseBack(matList,cx,cy,cz)
@@ -713,6 +725,7 @@ Function elliWrapper()
 	e_angleWave *= (180 / pi)
 End
 
+// Function to lay the spindle back down so that projection can be done
 ////	@param	eList	string with wavelist of eligible vec_ waves
 ////	@param	cx		coords for c, the midpoint of p1 and p2
 ////	@param	cy		coords for c, the midpoint of p1 and p2
