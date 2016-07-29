@@ -1,6 +1,8 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
+// These functions make a set of uniformly randomly distributed points
+// generate elliptical segments off these points and plot them our for display
 Function DoSim(num)
 	Variable num
 	UniformSphere(num,1)
@@ -10,12 +12,12 @@ End
 
 Function UniformSphere(num,Radius)
 	Variable num,Radius
-	
+
 	Make/O/N=(num) xw,yw,zw
 	Variable phi,theta,rr
-	
+
 	Variable i
-	
+
 	for(i = 0; i < num; i += 1)
 		phi = pi + enoise(pi)
 		theta = acos(enoise(1))
@@ -52,7 +54,7 @@ Function PlotIt()
 	DoWindow/K xyplot
 	Display/N=xyplot
 	Variable i
-	
+
 	for(i = 0; i < nWaves; i += 1)
 		wName = "vec_xz_" + num2str(i)
 		Make/O/N=(2,2) $wName
@@ -92,7 +94,7 @@ Function PlotIt()
 	ModifyGraph mirror=1
 	Label left "z";DelayUpdate
 	Label bottom "y"
-	
+
 	DoWindow/F yzplot
 	SetAxis left -1,1;DelayUpdate
 		SetAxis bottom -1,1
@@ -116,6 +118,4 @@ Function PlotIt()
 	ModifyGraph mirror=1
 	Label left "y";DelayUpdate
 	Label bottom "x"
-
-
 End
