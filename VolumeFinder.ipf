@@ -1,159 +1,9 @@
 #pragma TextEncoding = "MacRoman"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
-// This function does the calculations for each dataset
-////	@param	m0		matrix for processing
-////	@param	meth	method for calculation
-Function VolumeCalc(m0,meth)
-	Wave m0
-	Variable meth
-	
-	Variable timer = startmstimer
-	NVAR /Z vol
-	NVAR /Z nI	//global variables
-
-	nI = Dimsize(m0,0)
-	Variable nJ = Dimsize(m0,1)
-	Variable nK = Dimsize(m0,2)
-	
-	Make/O/N=((nI*nJ*nK),3) m1 = NaN	//slows code but worth it
-	
-	Variable l = 0		// rows in result wave
-	vol = 0
-	Variable tempvar, V_value
-	
-	Variable i, j, k
-	
-	For (k = 0; k < nK; k += 1) // layers
-		For (j = 0; j < nJ; j += 1) // columns
-			For (i = 0; i < nI; i += 1)	// rows
-				If (m0[i][j][k] != 0)
-					m1[l][0] = i
-					m1[l][1] = j
-					m1[l][2] = k
-					l += 1
-				EndIf
-			EndFor
-		EndFor
-	EndFor
-	MatrixOp/O w0 = sumRows(m1)
-	WaveTransform ZapNans w0
-	nI = numpnts(w0)
-	Duplicate/O/R=(0,nI-1) m1, pCloud
-	KillWaves w0, m1, m0		// also gets rid of image to free memory
-	
-#if (IgorVersion() >= 7)
-	If(meth == 1)
-		Triangulate3d/VOL pCloud
-	ElseIf(meth == 0)
-		ConvexHull pCloud
-		Wave M_Hull
-		Triangulate3d/VOL M_Hull
-	ElseIf(meth == 2)
-			Duplicate/O/R=[*][2] pCloud, pCloudZ
-			Redimension/N=-1 pCloudZ
-			Make/O/N=(nK) HullWave = 0
-			String wName, wList
-	
-		For (k = 0; k < nK; k += 1) // layers
-			FindValue/V=(k) /Z pCloudZ
-			If(V_Value > -1)	// test to see if it's worth calculating this layer
-				Duplicate/O/R=[*][0] pCloud, pCloudX
-				Duplicate/O/R=[*][1] pCloud, pCloudY
-				Redimension/N=-1 pCloudX, pCloudY
-				pCloudX = (pCloudZ == k) ? pCloudX : NaN
-				pCloudY = (pCloudZ == k) ? pCloudY : NaN
-				WaveTransform zapnans pCloudX
-				WaveTransform zapnans pCloudY
-				Convexhull /C pCloudX, pCloudY
-				Wave W_XHull, W_YHull
-				HullWave[k] = PolygonArea(W_XHull,W_YHull)
-				Duplicate/O W_XHull, W_ZHull
-				W_ZHull = k
-				wName = "kCloud_" + num2str(k)
-				Concatenate/O/KILL {W_XHull,W_YHull,W_ZHull}, $wName
-			EndIf
-		EndFor
-			wList=WaveList("kCloud_*",";","")
-			Concatenate/O/KILL/NP=0 wList, kCloud
-			Triangulate3D/VOL kCloud
-			vol = V_Value
-	Else
-		return 0
-	EndIf
-	vol = V_value
-//	Print "Volume is", V_value
-#else
-	If(meth == 1)
-		Triangulate3d/OUT=2 pCloud
-	ElseIf(meth == 0)	
-		Wave m2 = pCloud
-	ElseIf(meth==2)
-		Duplicate/O/R=[*][2] pCloud, pCloudZ
-		Redimension/N=-1 pCloudZ
-		Make/O/N=(nK) HullWave = 0
-		String wName, wList
-	
-		For (k = 0; k < nK; k += 1) //layers
-			FindValue/V=(k) /Z pCloudZ
-			If(V_Value > -1)	//test to see if it's worth calculating this layer
-				Duplicate/O/R=[*][0] pCloud, pCloudX
-				Duplicate/O/R=[*][1] pCloud, pCloudY
-				Redimension/N=-1 pCloudX,pCloudY
-				pCloudX = (pCloudZ == k) ? pCloudX : NaN
-				pCloudY = (pCloudZ == k) ? pCloudY : NaN
-				WaveTransform zapnans pCloudX
-				WaveTransform zapnans pCloudY
-				ConvexHull/C pCloudX,pCloudY
-				Wave W_XHull,W_YHull
-				HullWave[k] = PolygonArea(W_XHull,W_YHull)
-				Duplicate/O W_XHull, W_ZHull
-				W_ZHull = k
-				wName = "kCloud_" + num2str(k)
-				Concatenate/O/KILL {W_XHull,W_YHull,W_ZHull}, $wName
-			EndIf
-		EndFor
-		wList = WaveList("kCloud*",";","")
-		Concatenate/O/KILL/NP=0 wList, kCloud
-		Wave m2 = kCloud
-	Else
-		return 0
-	EndIf
-	If(meth != 1)
-		ConvexHull m2	//use either pCloud or kCloud for 3D convex hull
-		Wave M_Hull
-		Triangulate3d/OUT=2 M_Hull
-		Wave M_TetraPath
-		nI=dimsize(M_TetraPath,0)/20	//number of tetrahedra
-		Make/O/N=(4,4) waveT = 1
-		For(i = 0; i < nI; i += 1)
-			waveT[0][0] = M_TetraPath[0+(i*20)][0]
-			waveT[1][0] = M_TetraPath[1+(i*20)][0]
-			waveT[2][0] = M_TetraPath[2+(i*20)][0]
-			waveT[3][0] = M_TetraPath[7+(i*20)][0]
-			waveT[0][1] = M_TetraPath[0+(i*20)][1]
-			waveT[1][1] = M_TetraPath[1+(i*20)][1]
-			waveT[2][1] = M_TetraPath[2+(i*20)][1]
-			waveT[3][1] = M_TetraPath[7+(i*20)][1]
-			waveT[0][2] = M_TetraPath[0+(i*20)][2]
-			waveT[1][2] = M_TetraPath[1+(i*20)][2]
-			waveT[2][2] = M_TetraPath[2+(i*20)][2]
-			waveT[3][2] = M_TetraPath[7+(i*20)][2]
-			tempvar = MatrixDet(waveT)/6
-			vol = abs(tempvar)
-		EndFor
-		KillWaves WaveT
-//		Print "Volume is", vol
-#endif
-	If(Meth == 2)
-		KillWaves pCloudX, pCloudY, pCloudZ
-	EndIf
-	printf "%g\r", stopmstimer(timer)/1e6
-End
-
-////	@param	opt	option for analysis
-Function VolumeFinder(opt)
-	Variable opt //0 is slow, calculates volume from 3D convex hull, 1 is calculation from all points, 2 does quick version from 2D hulls
+// Use this function to load and process TIFF stacks in one folder
+// TIFFs must be binarized versions of amira segmentation files
+Function VolumeFinder()
 	
 	String expDiskFolderName, expDataFileName
 	String FileList, ThisFile, wName
@@ -181,45 +31,29 @@ Function VolumeFinder(opt)
 		expDataFileName = ReplaceString(".tif",ThisFile,"")	// get rid of .tif
 		expDataFileName = ReplaceString(".labels",expDataFileName,"")	// get rid of .labels
 		ImageLoad/O/T=tiff/C=-1/LR3D/Q/P=expDiskFolder ThisFile
-		VolumeCalc($ThisFile,opt)
+		VolumeCalc($ThisFile)
 		fileWave[FileLoop] = expDataFileName
 		volWave[FileLoop] = vol
 		nPointWave[FileLoop] = nI
-		If(igorversion() >= 7)
-			If(opt == 0)
-				Wave M_Hull
-				wName = expDataFileName + "_Hull"
-				Rename M_Hull $wName
-			ElseIf(opt == 2)
-				Wave kCloud
-				wName = expDataFileName + "_kCloud"
-				Rename kCloud $wName
-				Wave HullWave
-				volHWave[FileLoop] = sum(HullWave)
-				wName = expDataFileName + "_HullWave"
-				Rename HullWave $wName
-			EndIf
-		Wave pCloud
+
+		Wave kCloud	//	path of the 3D convex hull
+		wName = expDataFileName + "_kCloud"
+		Rename kCloud $wName
+		Wave HullWave	// 1D wave of polygonarea for each 2D hull per layer
+		volHWave[FileLoop] = sum(HullWave)
+		wName = expDataFileName + "_HullWave"
+		Wave w1 = $wName
+		Rename HullWave $wName
+		Wave pCloud	// point cloud of all pixels over threshold
 		wName = expDataFileName + "_pCloud"
 		Rename pCloud $wName
-		Else
-			If(opt != 1)
-				Wave M_Hull
-				wName = expDataFileName + "_Hull"
-				Rename M_Hull $wName
-				If(opt == 2)
-					Wave kCloud
-					wName = expDataFileName + "_kCloud"
-					Rename kCloud $wName
-				EndIf
-			EndIf
-			Wave pCloud
-			wName = expDataFileName + "_pCloud"
-			Rename pCloud $wName
-			Wave M_TetraPath
-			wName = expDataFileName + "_TP"
-			Rename M_TetraPath $wName
-		EndIf
+		Wave LayerWave	// number of pixels over threshold per layer
+		wName = expDataFileName + "_LayerWave"
+		Rename LayerWave $wName
+		Wave w0 = $wName
+		MatrixOp/O w3 = w0 / w1
+		wName = expDataFileName + "_LayerDensity"
+		Rename w3 $wName
 		KillWaves /Z $ThisFile	//should already be killed
 	endfor
 	Duplicate nPointWave densityWave
@@ -262,6 +96,81 @@ Function VolumeFinder(opt)
 	Execute /Q "Tile"
 End
 
+// This function does the calculations for each dataset
+////	@param	m0		matrix for processing
+Function VolumeCalc(m0)
+	Wave m0
+	
+	Variable timer = startmstimer
+	NVAR /Z vol
+	NVAR /Z nI	//global variables
+
+	nI = Dimsize(m0,0)
+	Variable nJ = Dimsize(m0,1)
+	Variable nK = Dimsize(m0,2)
+	
+	Make/O/N=((nI*nJ*nK),3) m1 = NaN	//slows code but worth it
+	
+	Variable l = 0		// rows in result wave
+	vol = 0
+	Variable tempvar, V_value
+	
+	Variable i, j, k
+	
+	For (k = 0; k < nK; k += 1) // layers
+		For (j = 0; j < nJ; j += 1) // columns
+			For (i = 0; i < nI; i += 1)	// rows
+				If (m0[i][j][k] != 0)
+					m1[l][0] = i
+					m1[l][1] = j
+					m1[l][2] = k
+					l += 1
+				EndIf
+			EndFor
+		EndFor
+	EndFor
+	MatrixOp/O w0 = sumRows(m1)
+	WaveTransform ZapNans w0
+	nI = numpnts(w0)
+	Duplicate/O/R=(0,nI-1) m1, pCloud
+	KillWaves w0, m1, m0		// also gets rid of image to free memory
+	
+	Duplicate/O/R=[*][2] pCloud, pCloudZ
+	Redimension/N=-1 pCloudZ
+	Make/O/N=(nK) HullWave = 0, LayerWave = 0
+	// HullWave will hold the area of each convex hull per layer
+	// LayerWave will hold the number of pixels that are over threshold in that layer
+	String wName, wList
+	
+	For (k = 0; k < nK; k += 1) // layers
+		FindValue/V=(k) /Z pCloudZ
+		If(V_Value > -1)	// test to see if it's worth calculating this layer
+			Duplicate/O/R=[*][0] pCloud, pCloudX
+			Duplicate/O/R=[*][1] pCloud, pCloudY
+			Redimension/N=-1 pCloudX, pCloudY
+			pCloudX = (pCloudZ == k) ? pCloudX : NaN
+			pCloudY = (pCloudZ == k) ? pCloudY : NaN
+			WaveTransform zapnans pCloudX
+			WaveTransform zapnans pCloudY
+			LayerWave[k] = numpnts(pCloudX)
+			Convexhull /C pCloudX, pCloudY
+			Wave W_XHull, W_YHull
+			HullWave[k] = PolygonArea(W_XHull,W_YHull)
+			Duplicate/O W_XHull, W_ZHull
+			W_ZHull = k
+			wName = "kCloud_" + num2str(k)
+			Concatenate/O/KILL {W_XHull,W_YHull,W_ZHull}, $wName
+		EndIf
+	EndFor
+	wList=WaveList("kCloud_*",";","")
+	Concatenate/O/KILL/NP=0 wList, kCloud
+	Triangulate3D/VOL kCloud
+	vol = V_Value
+	KillWaves pCloudX, pCloudY, pCloudZ
+	printf "%g\r", stopmstimer(timer)/1e6
+End
+
+
 ////	@param	xnm	voxel size, x dimension in nm, i.e. 12
 ////	@param	ynm	voxel size, y dimension in nm, i.e. 12
 ////	@param	znm	voxel size, z dimension in nm, i.e. 60
@@ -271,7 +180,7 @@ Function ScaleIt(xnm,ynm,znm)
 	
 	Variable scale = (xnm * ynm * znm) / 1000000	//in µm^3
 	//need to scale MTs in a different way
-	If(xnm !=ynm)
+	If(xnm != ynm)
 		Print "xnm and ynm are not equal. Please check"
 	EndIf
 	Variable MTscale = (1/3) * (xnm * ((PI*12.5)^2)) // assumes MTs are 3 px wide
