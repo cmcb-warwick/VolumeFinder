@@ -13,13 +13,11 @@ This workflow measures the density of microtubules in a stack of TIFFs. Microtub
 2. Amira files are thresholded and converted to TIFF in FIJI using the [amThreshTiff.ijm](https://github.com/quantixed/VolumeFinder/blob/master/amThreshTiff.ijm) macro
 3. These TIFFs are batch-processed by Igor
 
-To do this call <code>VolumeFinder(2)</code>. Option 2 specifies the fastest calculation method. Now, point Igor at the directory containing the TIFFs.
-You can scale the output to real world values using <code>ScaleIt(xnm,ynm,znm)</code>. This will scale the point volumes and hull volumes to µm^3.
+To do this call <code>VolumeFinder()</code>. Now, point Igor at the directory containing the TIFFs.
+You can scale the output to real world values using <code>ScaleIt(xnm,ynm,znm)</code>. Using the correct voxel size. This will scale the point volumes and hull volumes to µm^3.
 
 Caution:
-* For best performance /VOL flag is used, only available in Igor 7
-* Code will compile in Igor 6.3+ but will use a slower method
-* Option 0 is the most straightforward, but is very slow: a complicated data set (768 x 768 x 500, 1.2 x 10^6 points) took ~3 h on a Mac Pro 6 Core. Option 2 speeds this to ~90 s.
+* Igor 7 only. Removed the ability to run in Igor 6.3
 
 ###Spatial Statistics
 Again Amira mesh files are used as a starting point. The FIJI script [am2skel.ijm](https://github.com/quantixed/VolumeFinder/blob/master/am2skel.ijm) will process these to first threshold them and make a directory of TIFFs and then produce categorised 1 px thick MT trajectories in 2D (one for each z-slice). These are called skeletons.
