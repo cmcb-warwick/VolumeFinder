@@ -42,7 +42,6 @@ Function VolumeFinder()
 		Wave HullWave	// 1D wave of polygonarea for each 2D hull per layer
 		volHWave[FileLoop] = sum(HullWave)
 		wName = expDataFileName + "_HullWave"
-		Wave w1 = $wName
 		Rename HullWave $wName
 		Wave pCloud	// point cloud of all pixels over threshold
 		wName = expDataFileName + "_pCloud"
@@ -50,10 +49,9 @@ Function VolumeFinder()
 		Wave LayerWave	// number of pixels over threshold per layer
 		wName = expDataFileName + "_LayerWave"
 		Rename LayerWave $wName
-		Wave w0 = $wName
-		MatrixOp/O w3 = w0 / w1
-		wName = expDataFileName + "_LayerDensity"
-		Rename w3 $wName
+		wName = expDataFileName + "_LDens"
+		MatrixOp/O $wName = LayerWave / HullWave
+		WaveTransform zapnans $wName
 		KillWaves /Z $ThisFile	//should already be killed
 	endfor
 	Duplicate nPointWave densityWave
