@@ -181,7 +181,9 @@ Function ScaleIt(xnm,ynm,znm)
 	If(xnm != ynm)
 		Print "xnm and ynm are not equal. Please check"
 	EndIf
-	Variable MTscale = (1/3) * (xnm * ((PI*12.5)^2)) // assumes MTs are 3 px wide
+	Variable MTscale = ((1/3) * (xnm * ((PI*12.5)^2))) / (10^9)
+	// assumes MTs are 3 px wide and are single MTs
+	// scale to µm^3
 	
 	Wave nPointWave, volWave
 	nPointWave *=MTscale
