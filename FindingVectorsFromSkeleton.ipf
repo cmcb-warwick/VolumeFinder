@@ -344,7 +344,22 @@ Function MakeMaps()
 	ModifyGraph margin=14
 	SavePICT/WIN=elliPlot/E=-5/RES=300/TRAN=1/W=(0,0,392,392) as "Clipboard"
 	LoadPICT/O/Q "Clipboard", elliPic
-	//KillWindow/Z elliPlot
+	
+	vecList = TraceNameList("elliPlot",";",1)
+	nVec = ItemsInList(VecList)	
+	
+	for(i = 0; i < nVec; i += 1)	
+		wName = StringFromList(i,vecList)
+		elliName = ReplaceString("vec",wName,"elli")
+		FindValue/TEXT=elliName e_NameWave
+			if (e_angleWave[V_Value] < 20)
+				RemoveFromGraph/W=elliPlot $wName
+			endif
+	endfor
+	
+	SavePICT/WIN=elliPlot/E=-5/RES=300/TRAN=1/W=(0,0,392,392) as "Clipboard"
+	LoadPICT/O/Q "Clipboard", wonkPic
+	KillWindow/Z elliPlot
 End
 
 // Creates PDF report of all the analysis
@@ -398,6 +413,7 @@ Function TidyAndReport()
 	NewLayout /N=summaryLayout
 	AppendLayoutObject /W=summaryLayout picture polePic
 	AppendLayoutObject /W=summaryLayout picture elliPic
+	AppendLayoutObject /W=summaryLayout picture wonkPic
 	
 	histlist = "allposHist;segposHist;elliHist;"
 	
@@ -418,12 +434,13 @@ Function TidyAndReport()
 #endif
 	ModifyLayout units=0
 	ModifyLayout frame=0,trans=1
-	ModifyLayout left(allposHist)=21,top(allposHist)=21,width(allposHist)=180,height(allposHist)=130
-	ModifyLayout left(segposHist)=21,top(segposHist)=171,width(segposHist)=180,height(segposHist)=130
-	ModifyLayout left(elliHist)=21,top(elliHist)=321,width(elliHist)=180,height(elliHist)=130
+	ModifyLayout left(allposHist)=300,top(allposHist)=21,width(allposHist)=180,height(allposHist)=130
+	ModifyLayout left(segposHist)=300,top(segposHist)=171,width(segposHist)=180,height(segposHist)=130
+	ModifyLayout left(elliHist)=300,top(elliHist)=321,width(elliHist)=180,height(elliHist)=130
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
-	ModifyLayout left(polePic)=260,top(polePic)=21,width(polePic)=312,height(polePic)=312
-	ModifyLayout left(elliPic)=260,top(elliPic)=390,width(elliPic)=312,height(elliPic)=312
+	ModifyLayout left(polePic)=21,top(polePic)=21,width(polePic)=250,height(polePic)=250
+	ModifyLayout left(elliPic)=21,top(elliPic)=285,width(elliPic)=250,height(elliPic)=250
+	ModifyLayout left(wonkPic)=21,top(wonkPic)=551,width(wonkPic)=250,height(wonkPic)=250
 	SavePICT/E=-2 as expCond + ".pdf"
 End
 
