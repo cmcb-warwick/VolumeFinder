@@ -19,6 +19,7 @@ Function MTs2Vectors()
 	segWrapper()
 	elliWrapper()
 	printf "%g\r", stopmstimer(timer)/1e6
+	MakeMaps()
 	TidyAndReport()
 End
 
@@ -134,9 +135,6 @@ Function ProcessTIFFs()
 	spWave[][0,1] *= pxSize
 	spWave[][2] *= zSize
 	
-	DoWindow/K allPlot
-	Display /N=allPlot
-	
 	for(FileLoop = 0; FileLoop < nFiles; FileLoop += 1)
 		ThisFile=StringFromList(FileLoop, FileList)
 		ImageLoad/O/T=tiff/Q/P=expDiskFolder/N=lImage ThisFile
@@ -200,7 +198,6 @@ Function TheFitter(xW,yW,i)
 		m1[0][1] = (W_coef[0] + (wavemin(xW) * W_coef[1])) * xySize
 		m1[1][1] = (W_coef[0] + (wavemax(xW) * W_coef[1])) * xySize
 		m1[][2] = nZ
-		AppendToGraph/W=allPlot m1[][1] vs m1[][0]
 	endif
 	KillWaves fit_tempYw
 End
@@ -221,15 +218,11 @@ Function Polarise()
 	Variable sp1_A,sp1_B,sp2_A,sp2_B
 	Variable ABx, CDx, ABy, CDy
 	String wName
-	Variable nearest,cW
+	Variable nearest
 	Make/O/N=(nVectors)/T pol_Name	// name of vector wave
 	Make/O/N=(nVectors) pol_Des	// which spindle pole is it from
 	Make/O/N=(nVectors) pol_Rev	// did the polarity get reversed?
 	Make/O/N=(nVectors) pol_Angle // what is the angle relative to the spindle axis?
-	// rgb waves as 1D, needs a p=9 point only for 180¡ or -180¡
-	Make/O/N=10 rW={257,34952,17476,4369,39321,56797,52428,34952,43690,43690}
-	Make/O/N=10 gW={8738,52428,43690,30583,39321,52428,26214,8738,17476,17476}
-	Make/O/N=10 bW={34952,61166,39321,13107,13107,30583,30583,21845,39321,39321}
 	Variable i
 	
 	for(i = 0; i < nVectors; i += 1)
@@ -276,14 +269,82 @@ Function Polarise()
 		elseif(pol_angle[i] < -180)
 			pol_Angle[i] += 360
 		endif
-		
-		cW = floor(abs(pol_Angle[i])/20)
-		if(numtype(cW) == 2)
-			RemoveFromGraph/W=allplot $wName
-		else
-			ModifyGraph/W=allPlot rgb($wName)=(rW[cW],gW[cW],bW[cW])
-		endif
 	endfor
+End
+
+Function MakeMaps()
+
+	NVAR /Z xySize = gpxSize
+	WAVE spWave,pol_Angle,pol_Des,segAngleWave,e_angleWave
+	WAVE/T e_nameWave
+
+	DoWindow/K allPlot // for back compatability
+	DoWindow/K polePlot
+	Display /N=polePlot
+	DoWindow/K elliPlot
+	Display /N=elliPlot
+	
+	String vecList = WaveList("vec_*",";","")
+	String wName
+	Variable nVec = ItemsInList(vecList)
+	
+	Variable i
+	
+	for(i = 0; i < nVec; i += 1)
+		wName = StringFromList(i,vecList)
+		AppendToGraph/W=polePlot $wName[][1] vs $wName[][0]
+		AppendToGraph/W=elliPlot $wName[][1] vs $wName[][0]
+	endfor
+ 
+	vecList = TraceNameList("elliPlot",";",1)
+	nVec = ItemsInList(VecList)	
+	
+	Make/O/N=(9,3) colorWave
+	colorWave[][0] = {65535,65278,65021,65021,65021,61937,55769,42662,32639}
+	colorWave[][1] = {62965,59110,53456,44718,36237,26985,18504,13878,10023}
+	colorWave[][2] = {60395,52942,41634,27499,15420,4883,257,771,1028}
+	Variable cW
+	String elliName
+	
+	for(i = 0; i < nVec; i += 1)	
+		wName = StringFromList(i,vecList)
+		elliName = ReplaceString("vec",wName,"elli")
+		FindValue/TEXT=elliName e_NameWave
+			if (V_Value != -1)
+				cW = floor(abs(e_angleWave[V_Value])/20)
+				ModifyGraph/W=elliPlot rgb($wName)=(colorWave[cW][0],colorWave[cW][1],colorWave[cW][2])
+			else
+				RemoveFromGraph/W=elliPlot $wName
+			endif
+	endfor
+	
+	// format polePlot
+	DoWindow/F polePlot
+	ModifyGraph /W=polePlot rgb=(32896,32896,32896)
+	AppendToGraph/W=polePlot spWave[][1] vs spWave[][0]
+	ModifyGraph /W=polePlot rgb(spWave)=(65535,0,0)
+	ModifyGraph/W=polePlot width={Plan,1,bottom,left}
+	SetAxis/W=polePlot/R left 768*xysize,0
+	SetAxis/W=polePlot bottom 0,768*xysize
+	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
+	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
+	ModifyGraph margin=14
+	SavePICT/WIN=polePlot/E=-5/RES=300/TRAN=1/W=(0,0,392,392) as "Clipboard"
+	LoadPICT/O/Q "Clipboard", polePic
+	KillWindow/Z polePlot
+	
+	// format elliPlot
+	DoWindow/F elliPlot
+	ModifyGraph/W=elliPlot gbRGB=(32896,32896,32896)
+	ModifyGraph/W=elliPlot width={Plan,1,bottom,left}
+	SetAxis/W=elliPlot/R left 768*xysize,0
+	SetAxis/W=elliPlot bottom 0,768*xysize
+	ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
+	ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
+	ModifyGraph margin=14
+	SavePICT/WIN=elliPlot/E=-5/RES=300/TRAN=1/W=(0,0,392,392) as "Clipboard"
+	LoadPICT/O/Q "Clipboard", elliPic
+	//KillWindow/Z elliPlot
 End
 
 // Creates PDF report of all the analysis
@@ -291,26 +352,8 @@ Function TidyAndReport()
 	NVAR /Z xySize = gpxSize
 	WAVE spWave,pol_Angle,pol_Des,segAngleWave,e_angleWave
 	SVAR expCond = TIFFtitle
-	
-	DoWindow/F allPlot
-	if(V_flag == 1)
-		AppendToGraph/W=allPlot spWave[][1] vs spWave[][0]
-		ModifyGraph/W=allPlot width={Plan,1,bottom,left}
-		SetAxis/W=allPlot/R left 768*xysize,0
-		SetAxis/W=allPlot bottom 0,768*xysize
-		ModifyGraph mirror=1,noLabel=2,axRGB=(34952,34952,34952)
-		ModifyGraph tlblRGB=(34952,34952,34952),alblRGB=(34952,34952,34952)
-		ModifyGraph margin=14
-		SavePICT/WIN=allPlot/E=-5/RES=300/TRAN=1/W=(0,0,392,392) as "Clipboard"
-		LoadPICT/O/Q "Clipboard", allPic
-		KillWindow/Z allPlot
-		// note that if user kills allPlot and allPic does not exist, this case is not handled
-	endif
-	
-	DoWindow/F circlePlot
-	if(V_flag == 0)
-		MakeCirclePlot()
-	endif
+ 
+	MakeMaps()
 	
 	// leave histlist like this in the case where code is run on a very old pxp
 	String histList = "sp1Hist;sp2Hist;allHist;allposHist;segAngleHist;segposHist;elliHist;"
@@ -353,8 +396,8 @@ Function TidyAndReport()
 	
 	DoWindow /K summaryLayout
 	NewLayout /N=summaryLayout
-	AppendLayoutObject /W=summaryLayout picture allPic
-	AppendLayoutObject /W=summaryLayout graph circlePlot
+	AppendLayoutObject /W=summaryLayout picture polePic
+	AppendLayoutObject /W=summaryLayout picture elliPic
 	
 	histlist = "allposHist;segposHist;elliHist;"
 	
@@ -375,10 +418,12 @@ Function TidyAndReport()
 #endif
 	ModifyLayout units=0
 	ModifyLayout frame=0,trans=1
-	Execute /Q "Tile/A=(6,3) allposHist,segposHist,elliHist"
+	ModifyLayout left(allposHist)=21,top(allposHist)=21,width(allposHist)=180,height(allposHist)=130
+	ModifyLayout left(segposHist)=21,top(segposHist)=171,width(segposHist)=180,height(segposHist)=130
+	ModifyLayout left(elliHist)=21,top(elliHist)=321,width(elliHist)=180,height(elliHist)=130
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
-	ModifyLayout left(allPic)=36,top(allPic)=425,width(allPic)=392,height(allPic)=392
-	ModifyLayout top(circlePlot)=432,left(circlePlot)=442,width(circlePlot)=100,height(circlePlot)=100
+	ModifyLayout left(polePic)=260,top(polePic)=21,width(polePic)=312,height(polePic)=312
+	ModifyLayout left(elliPic)=260,top(elliPic)=390,width(elliPic)=312,height(elliPic)=312
 	SavePICT/E=-2 as expCond + ".pdf"
 End
 
@@ -549,32 +594,6 @@ Function ssAngle(m0,m1)
 		angle += 360
 	endif	
 	Return angle
-End
-
-Function MakeCirclePlot()
-	
-	WAVE/Z rW,gW,bW
-	Make/O/N=(360,2) circleWave=0
-	Make/O/N=(360,3) circleColor
-	Variable i=0, j
-	
-	for(i = 0; i < 360; i += 1)
-		j = i - 180
-		circleWave[i][0] = sin(j*(pi/180))
-		circleWave[i][1] = cos(j*(pi/180))
-		circleColor[i][0] = rW[floor(abs(j)/20)]
-		circleColor[i][1] = gW[floor(abs(j)/20)]
-		circleColor[i][2] = bW[floor(abs(j)/20)]
-	endfor
-	DoWindow/K circlePlot
-	Display/N=circlePlot circlewave[][1] vs circleWave[][0]
-	DoWindow/F circlePlot
-	ModifyGraph/W=circlePlot zColor(circleWave)={circleColor,*,*,directRGB,0}
-	ModifyGraph/W=circlePlot margin=5,width={Plan,1,bottom,left}
-	ModifyGraph/W=circlePlot noLabel=2,axThick=0
-	ModifyGraph/W=circlePlot mode=3,marker=19
-	SetDrawEnv xcoord= bottom,ycoord= left,linefgc= (65535,0,0),arrow= 1;DelayUpdate
-	DrawLine 0,0,0,1
 End
 
 // Function to compare midpoint of MT segment to ellipsoid tangent
