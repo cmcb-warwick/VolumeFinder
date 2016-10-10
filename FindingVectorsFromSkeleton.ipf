@@ -312,6 +312,7 @@ Function TidyAndReport()
 		MakeCirclePlot()
 	endif
 	
+	// leave histlist like this in the case where code is run on a very old pxp
 	String histList = "sp1Hist;sp2Hist;allHist;allposHist;segAngleHist;segposHist;elliHist;"
 	String histName
 	Variable i
@@ -326,59 +327,36 @@ Function TidyAndReport()
 	pol_Angle_2 = (pol_Des == 2) ? pol_Angle_2 : NaN
 	WaveTransform zapnans pol_Angle_1
 	WaveTransform zapnans pol_Angle_2
-	
-	Make/N=180/O pol_Angle_1_Hist
-	Histogram/B={-180,2,180} pol_Angle_1,pol_Angle_1_Hist
-	Display/N=sp1Hist pol_Angle_1_Hist
-	ModifyGraph/W=sp1Hist rgb=(32767,32767,32767)
-	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Spindle pole 1"
-	Make/N=180/O pol_Angle_2_Hist
-	Histogram/B={-180,2,180} pol_Angle_2,pol_Angle_2_Hist
-	Display/N=sp2Hist pol_Angle_2_Hist
-	ModifyGraph/W=sp2Hist rgb=(32767,32767,32767)
-	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Spindle pole 2"
-	
 	Concatenate/O {pol_Angle_1,pol_Angle_2}, pol_Angle_all
-	Make/N=180/O pol_angle_all_Hist
-	Histogram/B={-180,2,180} pol_Angle_all,pol_Angle_all_Hist
-	Display/N=allHist pol_Angle_all_Hist
-	ModifyGraph/W=allHist rgb=(32767,32767,32767)
-	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "All MTs"
-	
 	Duplicate/O pol_Angle_all pol_Angle_all_pos
 	pol_Angle_all_pos = abs(pol_Angle_all[p])
 	Make/N=180/O pol_Angle_all_pos_Hist
-	Histogram/B={-180,2,180} pol_Angle_all_pos,pol_Angle_all_pos_Hist
+	Histogram/B={0,2,90} pol_Angle_all_pos,pol_Angle_all_pos_Hist
 	Display/N=allposHist pol_Angle_all_pos_Hist
 	ModifyGraph/W=allposHist rgb=(32767,32767,32767)
-	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "All MTs reflection"
+	TextBox/C/N=text0/F=0/A=RT/X=0.00/Y=0.00 "Spindle axis"
 	
 	Duplicate/O segAngleWave segAngleWave_all
-	WaveTransform zapnans segAngleWave_all
-	Make/N=180/O seg_angle_Hist
-	Histogram/B={-180,2,180} segAngleWave_all,seg_angle_Hist
-	Display/N=segAngleHist seg_angle_Hist
-	ModifyGraph/W=segAngleHist rgb=(32768,32770,65535)
-	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Nearest MT Segments"
-	
 	Duplicate/O segAngleWave_all segAngleWave_all_pos
 	segAngleWave_all_pos = abs(segAngleWave_all[p])
 	Make/N=90/O seg_angle_pos_Hist
 	Histogram/B={0,2,90} segAngleWave_all_pos,seg_angle_pos_Hist
 	Display/N=segposHist seg_angle_pos_Hist
 	ModifyGraph/W=segposHist rgb=(32768,32770,65535)
-	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Nearest MT segments reflection"
+	TextBox/C/N=text0/F=0/A=RT/X=0.00/Y=0.00 "Nearest MT segments"
 	
 	Make/N=90/O e_angleWave_Hist
 	Histogram/B={0,2,90} e_angleWave,e_angleWave_Hist
 	Display/N=elliHist e_angleWave_Hist
 	ModifyGraph/W=elliHist rgb=(65535,43688,32768)
-	TextBox/C/N=text0/F=0/A=LT/X=0.00/Y=0.00 "Ellipse comparison"
+	TextBox/C/N=text0/F=0/A=RT/X=0.00/Y=0.00 "Ellipse comparison"
 	
 	DoWindow /K summaryLayout
 	NewLayout /N=summaryLayout
 	AppendLayoutObject /W=summaryLayout picture allPic
 	AppendLayoutObject /W=summaryLayout graph circlePlot
+	
+	histlist = "allposHist;segposHist;elliHist;"
 	
 	for(i = 0; i < ItemsInList(histList); i += 1)
 		histName = StringFromList(i,histList)
@@ -397,7 +375,7 @@ Function TidyAndReport()
 #endif
 	ModifyLayout units=0
 	ModifyLayout frame=0,trans=1
-	Execute /Q "Tile/A=(6,3) sp1Hist,sp2Hist,allHist,allposHist,segAngleHist,segposHist,elliHist"
+	Execute /Q "Tile/A=(6,3) allposHist,segposHist,elliHist"
 	TextBox/C/N=text0/F=0/A=RB/X=0.00/Y=0.00 expCond
 	ModifyLayout left(allPic)=36,top(allPic)=425,width(allPic)=392,height(allPic)=392
 	ModifyLayout top(circlePlot)=432,left(circlePlot)=442,width(circlePlot)=100,height(circlePlot)=100
