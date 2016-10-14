@@ -1,26 +1,24 @@
 # VolumeFinder
 Procedures for volume analysis and spatial statistics of 3D point sets in IgorPro.
 
-Two pairs of FIJI/Igor scripts represent two workflows to move segmented models from Amira into Igor and analyse them.
+Two types of analysis are possible
 
-1. [**Volume analysis**](#volume-analysis) <code>VolumeFinder.ipf</code> & <code>amThreshTiff.ijm</code>
-2. [**Spatial statistics**](#spatial-statistics) <code>FindingVectorsFromSkeleton.ipf</code> & <code>am2skel.ijm</code>
+1. [**Volume analysis**](#volume-analysis) <code>VolumeFinder.ipf</code>
+2. [**Spatial statistics**](#spatial-statistics) <code>FindingVectorsFromSkeleton.ipf</code>
+
+Microtubules are first segmented in Amira. Amira mesh files are converted to TIFFs and skeletons using a FIJI macro [am2skel.ijm](https://github.com/quantixed/VolumeFinder/blob/master/am2skel.ijm). This process .am files to first threshold them and produce categorised 1 px thick MT trajectories in 2D (one for each z-slice). These are called skeletons. The thresholded TIFFs are used for Volume Analysis and the skeletons are used for Spatial Statistics.
 
 ###Volume analysis
-This workflow measures the density of microtubules in a stack of TIFFs. Microtubules are first segmented in Amira and then converted to TIFFs using a FIJI macro. Finally, Igor will compute the volume of microtubules as a density of the volume in which they are contained. This was written for analysis of segmented data from SBF-SEM (3View). 
-
-1. Segmentation is first done in Amira. Segmented microtubule labels have the value 2.
-2. Amira files are thresholded and converted to TIFF in FIJI using the [amThreshTiff.ijm](https://github.com/quantixed/VolumeFinder/blob/master/amThreshTiff.ijm) macro
-3. These TIFFs are batch-processed by Igor
+This workflow measures the density of microtubules in a stack of TIFFs. Igor will compute the volume of microtubules as a density of the volume in which they are contained. This was written for analysis of segmented data from SBF-SEM (3View). 
 
 To do this call <code>VolumeFinder()</code>. Now, point Igor at the directory containing the TIFFs.
 You can scale the output to real world values using <code>ScaleIt(xnm,ynm,znm)</code>. Using the correct voxel size. This will scale the point volumes and hull volumes to µm^3.
 
 Caution:
+
 * Igor 7 only. Removed the ability to run in Igor 6.3
 
 ###Spatial Statistics
-Again Amira mesh files are used as a starting point. The FIJI script [am2skel.ijm](https://github.com/quantixed/VolumeFinder/blob/master/am2skel.ijm) will process these to first threshold them and make a directory of TIFFs and then produce categorised 1 px thick MT trajectories in 2D (one for each z-slice). These are called skeletons.
 
 Skeletons are processed by Igor <code>FindingVectorsFromSkeleton.ipf</code> to form 2D vectors which can then be used for spatial statistical analysis. Vectors are found by a linear fit to xy coordinates.
 
