@@ -7,15 +7,15 @@
 dir1 = getDirectory("Choose Amira Directory ");
 list1 = getFileList(dir1);
 dir2 = dir1 + "TIFF/";
-File.makeDirectory(dir2);
+File.makeDirectory(dir2); // make TIFF/ dir
 
 setBatchMode(true);
 for (i = 0; i < list1.length; i++)
     am2TIFFs(dir1, list1[i]);
-setBatchMode(false);
- 
-function am2TIFFs(dir1, filename)
-{ 
+
+File.delete(dir2); // delete TIFF/ dir
+
+function am2TIFFs(dir1, filename) { 
 	st1 = "amirafile=[" + dir1 + filename + "]";
 	run("Amira...", st1);
 	setAutoThreshold("Default dark");
@@ -24,25 +24,28 @@ function am2TIFFs(dir1, filename)
 	run("Convert to Mask", "method=Default background=Dark");
 	st2 = replace(filename,".Labels.am","/");
 	dir3 = dir2 + st2;
-	File.makeDirectory(dir3);
+	File.makeDirectory(dir3); // make TIFF/condition/ dir
 	run("Image Sequence... ", "format=TIFF save=[" + dir3 + "]");
+	saveAs("Tiff", dir1 + filename); // save a stack version in top dir
 	close();
 
 	list2 = getFileList(dir3);
 	dir4 = dir1 + "skel/";
-	File.makeDirectory(dir4);
+	File.makeDirectory(dir4); // make skel/ dir
 	dir5 = dir4 + st2;
-	File.makeDirectory(dir5);
+	File.makeDirectory(dir5); // make skel/condition/ dir
 	
-	setBatchMode(true);
-	for (i = 0; i < list2.length; i++)
+	for (i = 0; i < list2.length; i++) {
     	TIFF2skel(dir3, list2[i]);
-	setBatchMode(false);
-
+	}
+    // clean up
+    for (i = 0; i < list2.length; i++) {
+    	File.delete(dir3 + list2[i]); // delete single TIFFs
+    }
+	File.delete(dir3); // delete TIFF/condition/ dir
 }
 
-function TIFF2skel(dir3, filename)
-{ 
+function TIFF2skel(dir3, filename) 	{ 
 	open(dir3+filename);
 	run("Skeletonize (2D/3D)");
 	run("Analyze Skeleton (2D/3D)", "prune=[shortest branch] calculate show display");
