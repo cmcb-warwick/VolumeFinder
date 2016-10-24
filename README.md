@@ -1,5 +1,5 @@
 # VolumeFinder
-Procedures for volume analysis and spatial statistics of 3D point sets in IgorPro.
+Procedures for volume analysis and spatial statistics of 3D point sets in IgorPro. A detailed walkthrough of the analysis procedure is available [here](https://github.com/quantixed/VolumeFinder/blob/master/volumefinder-analysis-3d.pdf).
 
 Two types of analysis are possible
 

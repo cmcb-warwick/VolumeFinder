@@ -1,6 +1,13 @@
 #pragma TextEncoding = "MacRoman"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
+// Menu item for easy execution
+Menu "Macros"
+	Submenu "Volume Finder"
+	"Find Volumes",  VolumeFinder()
+	End
+End
+
 // Use this function to load and process TIFF stacks in one folder
 // TIFFs must be binarized versions of amira segmentation files
 Function VolumeFinder()
@@ -92,6 +99,7 @@ Function VolumeFinder()
 	ModifyLayout units=0
 	ModifyLayout frame=0,trans=1
 	Execute /Q "Tile"
+	ScaleIt(12,12,60)
 End
 
 // This function does the calculations for each dataset

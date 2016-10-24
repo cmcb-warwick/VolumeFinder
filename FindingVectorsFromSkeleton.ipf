@@ -3,9 +3,11 @@
 
 // Menu item for easy execution
 Menu "Macros"
+	Submenu "Spatial Analysis"
 	"MTs2Vectors...",  MTs2Vectors()
 	"Remake Report", TidyAndReport()
 	"Redo Ellipse Comparison", ReDoElliAnalysis()
+	End
 End
 
 // Workflow to load and analyse a dataset from set of TIFFs through to report
@@ -312,7 +314,9 @@ Function MakeMaps()
 		FindValue/TEXT=elliName e_NameWave
 			if (V_Value != -1)
 				cW = floor(abs(e_angleWave[V_Value])/20)
-				ModifyGraph/W=elliPlot rgb($wName)=(colorWave[cW][0],colorWave[cW][1],colorWave[cW][2])
+				if (numtype(cW) == 0)
+					ModifyGraph/W=elliPlot rgb($wName)=(colorWave[cW][0],colorWave[cW][1],colorWave[cW][2])
+				endif
 			else
 				RemoveFromGraph/W=elliPlot $wName
 			endif
