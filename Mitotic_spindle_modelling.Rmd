@@ -1,0 +1,485 @@
+---
+title: "Microtubule organization within mitotic spindles"
+author: "Thomas Honnor"
+date: "17 November 2016"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,tidy=TRUE)
+```
+
+# Overview
+
+This R markdown file, *Mitotic_spindle_modelling.Rmd*, carries out the statistical analysis presented in the paper "Microtubule organization within mitotic spindles revealed by serial block face scanning EM and image analysis" currently available at [biorxiv.org](http://biorxiv.org/content/early/2016/11/15/087866).
+
+A copy of this R markdown file may be downloaded from [GitHub](https://github.com/quantixed/VolumeFinder).
+
+The aim of this markdown file is to provide a single interactive container for both the R code and descriptions on how the code may be applied to data sets by an individual with virtually no knowledge of R programming. Experienced R users can access the code chunks within this file for alteration or extension.
+
+We recommend opening the document in RStudio, which has built in functionality for R markdown documents. Code may alternatively be copied and pasted into R.
+
+# Step-by-step guide
+
+## Creating the file structure
+
+To ensure that the code is as straightforward as possible to run, we ask users to create a file system into which data is copied.
+
+Users should create a single folder to contain all of the results of the analysis. We will reference this folder throughout this document as *.../Project_folder*, although users are free to name it as they wish.
+
+This R markdown script, *Mitotic_spindle_modelling.Rmd*, should be copied into the folder resulting in *.../Project_folder/Mitotic_spindle_modelling.Rmd*.
+
+The default behaviour of RStudio is to reference files from the location of the R markdown file, so file paths can be reference relative to it. Provided *Mitotic_spindle_modelling.Rmd* is located with *.../Project_folder* any file location can be specified relative to *.../Project_folder*.
+
+The following code creates the subfolders *.../Project_folder/Data*, *.../Project_folder/Data/Originals*, *.../Project_folder/Data/Plots* and *.../Project_folder/Data/R_data* to contain later results.
+
+Run the following code chunk by clicking the green play symbol on its right-hand side.
+
+```{r file_structure, echo=TRUE}
+if (dir.exists("Data")==FALSE) dir.create("Data")
+if (dir.exists("Data/Originals")==FALSE) dir.create("Data/Originals")
+if (dir.exists("Data/Plots")==FALSE) dir.create("Data/Plots")
+if (dir.exists("Data/R_data")==FALSE) dir.create("Data/R_data")
+```
+
+
+## Copying the data files
+
+The R code is programmed to take as its input *.txt* files within which each line contains the six numbers $\underline{L}^{(i)}(0),\underline{L}^{(i)}(1)$, that is the two sets of coordinates corresponding to the ends of each observed line. Each file is assumed to be all measurements for a single observation.
+
+The first line of each file should be the six numbers $\underline{p}^{(1)},\underline{p}^{(2)}$, the coordinate locations of the two fixed points.
+
+An example of such a file can be seen below.
+```markdown
+4356,5472,8400,8644,-2172,4000
+3984,2620.0305,720,3888,3064.7983,720
+3900,3507.2993,720,3972,3237.8379,720
+4032,3552.7058,720,4068,3399.5293,720
+4164,1842,720,4176,2076,720
+```
+From this example $\underline{p}^{(1)}=(4356,5472,8400)$ and $\underline{L}^{(3)}(1)=(4068,3399.5293,720)$.
+
+Data files in this specified format should be copied into *.../Project_folder/Data/Originals*.
+
+## Converting data files
+
+The following code reads each of the input *.txt* files and combines the data to produce a single *.RData* file which is saved as *.../Project_folder/Data/R_data/line_data.RData*.
+
+Click the green play symbol on the following code chunk.
+
+```{r data_conversion, echo=TRUE}
+data.formatting = function(source.location,individual.names,output.location){
+
+number.of.observations <- length(individual.names)
+
+line.endpoints <- array(NA,dim=c(number.of.observations,1,2,3))
+number.of.lines <- rep(NA,number.of.observations)
+number.of.removed.lines <- rep(NA,number.of.observations)
+
+point.p1 <- matrix(NA,nrow=number.of.observations,ncol=3)
+point.p2 <- matrix(NA,nrow=number.of.observations,ncol=3)
+
+for (i in 1:number.of.observations){
+	
+	holding.data <- read.csv(paste(source.location,"/",individual.names[i],".txt",sep=""),header=FALSE)
+	holding.data <- data.matrix(holding.data)
+	
+	point.p1[i,] <- holding.data[1,1:3]
+	point.p2[i,] <- holding.data[1,4:6]
+	holding.data <- holding.data[-1,]
+
+	if (sum(as.vector(is.na(holding.data))) > 0){
+	
+		void.rows <- which(rowSums(is.na(holding.data))>0)
+	
+		number.of.removed.lines[i] <- length(void.rows)
+		
+		holding.data <- holding.data[-void.rows,]
+
+	} else{
+	
+		number.of.removed.lines[i] <- 0
+		
+	}
+
+	number.of.lines[i] <- dim(holding.data)[1]
+	
+	if (number.of.lines[i] > dim(line.endpoints)[2]){
+	
+		new.line.endpoints <- array(NA,dim=c(number.of.observations,number.of.lines[i],2,3))
+		
+		new.line.endpoints[,1:dim(line.endpoints)[2],,] <- line.endpoints
+		new.line.endpoints[i,,1,] <- as.matrix(holding.data[,1:3])
+		new.line.endpoints[i,,2,] <- as.matrix(holding.data[,4:6])
+		
+		line.endpoints <- new.line.endpoints
+		
+	} else{
+	
+		line.endpoints[i,1:number.of.lines[i],1,] <- as.matrix(holding.data[,1:3])
+		line.endpoints[i,1:number.of.lines[i],2,] <- as.matrix(holding.data[,4:6])
+		
+	}
+	
+}
+
+point.c <- (point.p1+point.p2)/2
+
+maximum.number.of.lines <- max(number.of.lines)
+
+line.data <- list(number.of.observations=number.of.observations,number.of.lines=number.of.lines,maximum.number.of.lines=maximum.number.of.lines,line.endpoints=line.endpoints,number.of.removed.lines=number.of.removed.lines,point.c=point.c,point.p1=point.p1,point.p2=point.p2,individual.names=individual.names)
+
+save(line.data,file=output.location)
+
+}
+
+source.location <- "Data/Originals/"
+output.location <- "Data/R_data/line_data.Rdata"
+
+sample.names <- unlist(strsplit(list.files(source.location),".txt"))
+
+data.formatting(source.location,sample.names,output.location)
+```
+
+## Transforming the data
+
+The following code takes *.../Project_folder/Data/R_data/line_data.RData* and transforms the data such that $\underline{c}$ is at the origin and $\underline{p}^{(1)}$ and $\underline{p}^{(2)}$ are located at $(0,0,\pm b)$. The results are saved at *.../Project_folder/Data/R_data/transformed_line_data.RData*
+
+Click the green play symbol on the following code chunk.
+
+```{r data_transformation, echo=TRUE}
+data.transformation = function(source.location,output.location){
+
+load(source.location)
+attach(line.data)
+
+pole.directions <- point.p1-point.p2
+
+rotation.angles <- rep(NA,number.of.observations)
+
+for (i in 1:number.of.observations){
+
+	rotation.angles[i] <- acos(pole.directions[i,3]/sqrt(sum(pole.directions[i,]^2)))
+	
+}
+
+rotation.axes <- array(NA,dim=c(number.of.observations,3))
+
+for (i in 1:number.of.observations){
+
+	holding.axis <- c(point.p1[i,2]-point.c[i,2],-(point.p1[i,1]-point.c[i,1]),0)
+	
+	holding.axis <- holding.axis/sqrt(sum(holding.axis^2))
+	
+	rotation.axes[i,] <- holding.axis
+	
+}
+
+rotation.matrix <- function(rotation.angle,rotation.axis){
+
+	holding.matrix <- matrix(NA,3,3)
+	
+	holding.matrix[1,1] <- cos(rotation.angle)+rotation.axis[1]^2*(1-cos(rotation.angle))
+	holding.matrix[1,2] <- rotation.axis[1]*rotation.axis[2]*(1-cos(rotation.angle))-rotation.axis[3]*sin(rotation.angle)
+	holding.matrix[1,3] <- rotation.axis[1]*rotation.axis[3]*(1-cos(rotation.angle))+rotation.axis[2]*sin(rotation.angle)
+	holding.matrix[2,1] <- rotation.axis[2]*rotation.axis[1]*(1-cos(rotation.angle))+rotation.axis[3]*sin(rotation.angle)
+	holding.matrix[2,2] <- cos(rotation.angle)+rotation.axis[2]^2*(1-cos(rotation.angle))
+	holding.matrix[2,3] <- rotation.axis[2]*rotation.axis[3]*(1-cos(rotation.angle))-rotation.axis[1]*sin(rotation.angle)
+	holding.matrix[3,1] <- rotation.axis[3]*rotation.axis[1]*(1-cos(rotation.angle))-rotation.axis[2]*sin(rotation.angle)
+	holding.matrix[3,2] <- rotation.axis[3]*rotation.axis[2]*(1-cos(rotation.angle))+rotation.axis[1]*sin(rotation.angle)
+	holding.matrix[3,3] <- cos(rotation.angle)+rotation.axis[3]^2*(1-cos(rotation.angle))
+	
+	return(holding.matrix)
+	
+}
+
+transformed.line.endpoints <- array(NA,dim=c(number.of.observations,maximum.number.of.lines,2,3))
+
+rotation.matrices <- array(NA,dim=c(number.of.observations,3,3))
+
+transformed.point.c <- array(NA,dim=c(number.of.observations,3))
+transformed.point.p1 <- array(NA,dim=c(number.of.observations,3))
+transformed.point.p2 <- array(NA,dim=c(number.of.observations,3))
+
+for (i in 1:number.of.observations){
+
+	holding.matrix <- rotation.matrix(rotation.angles[i],rotation.axes[i,])
+	
+	rotation.matrices[i,,] <- holding.matrix
+	
+	transformed.line.endpoints[i,,1,] <- t(holding.matrix%*%(t(line.endpoints[i,,1,])-point.c[i,]))
+	transformed.line.endpoints[i,,2,] <- t(holding.matrix%*%(t(line.endpoints[i,,2,])-point.c[i,]))
+	
+	transformed.point.c[i,] <- t(holding.matrix%*%(point.c[i,]-point.c[i,]))
+	transformed.point.p1[i,] <- t(holding.matrix%*%(point.p1[i,]-point.c[i,]))
+	transformed.point.p2[i,] <- t(holding.matrix%*%(point.p2[i,]-point.c[i,]))
+	
+}
+
+transformed.line.data <- list(number.of.observations=number.of.observations,number.of.lines=number.of.lines,maximum.number.of.lines=maximum.number.of.lines,line.endpoints=line.endpoints,transformed.line.endpoints=transformed.line.endpoints,number.of.removed.lines=number.of.removed.lines,point.c=point.c,transformed.point.c=transformed.point.c,point.p1=point.p1,transformed.point.p1=transformed.point.p1,point.p2=point.p2,transformed.point.p2=transformed.point.p2,rotation.angles=rotation.angles,rotation.axes=rotation.axes,rotation.matrices=rotation.matrices,individual.names=individual.names)
+
+save(transformed.line.data,file=output.location)
+
+detach(line.data)
+
+}
+
+source.location <- "Data/R_data/line_data.RData"
+output.location <- "Data/R_data/transformed_line_data.RData"
+
+data.transformation(source.location,output.location)
+```
+
+
+## Model comparison
+
+The following code takes *.../Project_folder/Data/R_data/transformed_line_data.RData* and compares observed line directions to model line directions. The results are saved at *.../Project_folder/Data/R_data/comparison_data*.
+
+Click the green play symbol on the following code chunk.
+
+```{r model_comparison, echo=TRUE}
+model.comparison = function(source.location,output.location){
+
+load(source.location)
+attach(transformed.line.data)
+
+transformed.line.midpoints <- (transformed.line.endpoints[,,1,]+transformed.line.endpoints[,,2,])/2
+transformed.line.directions <- array(NA,dim=c(number.of.observations,maximum.number.of.lines,3))
+
+for (i in 1:number.of.observations){
+
+	holding.directions <- transformed.line.endpoints[i,,2,]-transformed.line.endpoints[i,,1,]
+	holding.directions <- holding.directions/sqrt(rowSums(holding.directions^2))
+
+	transformed.line.directions[i,,] <- holding.directions
+	
+}
+
+constants.b <- transformed.point.p1[,3]
+
+proposed.line.directions <- array(NA,dim=c(number.of.observations,maximum.number.of.lines,3))
+
+for (i in 1:number.of.observations){
+
+	holding.directions <- transformed.line.midpoints[i,,]
+	holding.directions[,3] <- (holding.directions[,3]^2-constants.b[i]^2)/holding.directions[,3]
+	holding.directions <- holding.directions/sqrt(rowSums(holding.directions^2))
+	
+	proposed.line.directions[i,,] <- holding.directions
+
+}
+
+proposed.adjusted.line.directions <- array(NA,dim=c(number.of.observations,maximum.number.of.lines,3))
+
+for (i in 1:number.of.observations){
+
+	holding.directions <- proposed.line.directions[i,,]
+	
+	wrong.direction <- rotation.matrices[i,,]%*%c(0,0,1)
+
+	wrong.direction.amounts <- holding.directions%*%wrong.direction
+	
+	wrong.direction.vectors <- matrix(wrong.direction,ncol=3,nrow=maximum.number.of.lines,byrow=TRUE)*as.vector(wrong.direction.amounts)
+	
+	holding.directions <- holding.directions-wrong.direction.vectors
+	holding.directions <- holding.directions/sqrt(rowSums(holding.directions^2))
+	
+	proposed.adjusted.line.directions[i,,] <- holding.directions
+	
+}
+
+proposed.angles <- array(NA,dim=c(number.of.observations,maximum.number.of.lines))
+
+proposed.adjusted.angles <- array(NA,dim=c(number.of.observations,maximum.number.of.lines))
+
+for (i in 1:number.of.observations){
+
+	for (j in 1:number.of.lines[i]){
+
+		proposed.angles[i,j] <- acos(sum(proposed.line.directions[i,j,]*transformed.line.directions[i,j,]))
+	
+		proposed.adjusted.angles[i,j] <- acos(sum(proposed.adjusted.line.directions[i,j,]*transformed.line.directions[i,j,]))
+		
+	}
+	
+}
+
+proposed.transformed.line.endpoints <- array(NA,dim=c(number.of.observations,maximum.number.of.lines,2,3))
+
+proposed.adjusted.transformed.line.endpoints <- array(NA,dim=c(number.of.observations,maximum.number.of.lines,2,3))
+
+line.lengths <- array(NA,dim=c(number.of.observations,maximum.number.of.lines))
+
+for (i in 1:number.of.observations){
+
+	line.lengths[i,] <- sqrt(rowSums((transformed.line.endpoints[i,,1,]-transformed.line.endpoints[i,,2,])^2))
+	
+	proposed.transformed.line.endpoints[i,,1,] <- transformed.line.midpoints[i,,]+proposed.line.directions[i,,]*line.lengths[i,]/2
+	proposed.transformed.line.endpoints[i,,2,] <- transformed.line.midpoints[i,,]-proposed.line.directions[i,,]*line.lengths[i,]/2
+	
+	proposed.adjusted.transformed.line.endpoints[i,,1,] <- transformed.line.midpoints[i,,]+proposed.adjusted.line.directions[i,,]*line.lengths[i,]/2
+	proposed.adjusted.transformed.line.endpoints[i,,2,] <- transformed.line.midpoints[i,,]-proposed.adjusted.line.directions[i,,]*line.lengths[i,]/2
+	
+}
+
+comparison.data <- list(number.of.observations=number.of.observations,number.of.lines=number.of.lines,maximum.number.of.lines=maximum.number.of.lines,line.endpoints=line.endpoints,transformed.line.endpoints=transformed.line.endpoints,number.of.removed.lines=number.of.removed.lines,point.c=point.c,transformed.point.c=transformed.point.c,point.p1=point.p1,transformed.point.p1=transformed.point.p1,point.p2=point.p2,transformed.point.p2=transformed.point.p2,rotation.angles=rotation.angles,rotation.axes=rotation.axes,rotation.matrices=rotation.matrices,individual.names=individual.names,transformed.line.directions=transformed.line.directions,proposed.line.directions=proposed.line.directions,proposed.adjusted.line.directions=proposed.adjusted.line.directions,proposed.angles=proposed.angles,proposed.adjusted.angles=proposed.adjusted.angles,proposed.transformed.line.endpoints=proposed.transformed.line.endpoints,proposed.adjusted.transformed.line.endpoints=proposed.adjusted.transformed.line.endpoints,transformed.line.midpoints=transformed.line.midpoints,line.lengths=line.lengths)
+
+save(comparison.data,file=output.location)
+
+detach(transformed.line.data)
+
+}
+
+source.location <- "Data/R_data/transformed_line_data.RData"
+output.location <- "Data/R_data/comparison_data.RData"
+
+model.comparison(source.location,output.location)
+```
+
+## Anlaysis of results
+
+The following code takes *.../Project_folder/Data/R_data/comparison_data.RData* and summarises it to produce a number of tables and plots. Each summary is made using only those lines with a length greater than 60 which lie completely between the $x$-$y$ planes at $z=\pm b$.
+
+Click the green play symbol on the following code chunk.
+
+```{r result_plotting, echo=TRUE, warning=FALSE}
+plotting.results = function(source.location,output.location){
+
+load(source.location)
+
+attach(comparison.data)
+
+between.pole.indices <- array(NA,dim=c(number.of.observations,maximum.number.of.lines))
+
+number.of.valid.lines <- rep(NA,number.of.observations)
+
+for (i in 1:number.of.observations){
+
+	holding.results <- which(abs(transformed.line.endpoints[i,,1,3])<abs(transformed.point.p1[i,3])&abs(transformed.line.endpoints[i,,2,3])<abs(transformed.point.p1[i,3])&line.lengths[i,]>=60)
+
+	number.of.valid.lines[i] <- length(holding.results)
+	
+	between.pole.indices[i,1:number.of.valid.lines[i]] <- holding.results
+	
+}
+
+square.count <- ceiling(sqrt(number.of.observations))
+
+pdf(file=paste(output.location,"/angles.pdf",sep=""),width=square.count*3,height=square.count*3)
+
+par(mfrow=c(square.count,square.count))
+
+for (i in 1:number.of.observations){
+
+	holding.data <- proposed.adjusted.angles[i,between.pole.indices[i,1:number.of.valid.lines[i]]]*360/2/pi
+
+	holding.density <- density(holding.data,bw="nrd",kernel="gaussian")
+	
+	holding.bandwidth <- holding.density$bw
+	holding.weights <- 1/pnorm(0,mean=holding.data,sd=holding.bandwidth,lower.tail=FALSE)
+	
+	holding.density.2 <- density(holding.data,bw=holding.bandwidth,kernel="gaussian",weights=holding.weights/length(holding.data))
+	
+	holding.density.2$y[which(holding.density.2$x<0)] <- 0
+	
+	plot(holding.density.2$x[which(holding.density.2$x>=0)],holding.density.2$y[which(holding.density.2$x>=0)],xlim=c(0,180),ylim=c(0,max(holding.density.2$y)),main=paste(individual.names[i]," angles distribution",sep=""),type="l",xlab="angle",ylab="density")
+	
+	mtext(paste("n = ",holding.density$n,sep=""),side=3)
+
+}
+
+dev.off()
+
+maximum.line.length <- max(as.vector(line.lengths),na.rm=TRUE)
+
+pdf(file=paste(output.location,"/angle_against_length.pdf",sep=""),width=square.count*3,height=square.count*3)
+
+par(mfrow=c(square.count,square.count))
+
+for (i in 1:number.of.observations){
+
+	smoothScatter(line.lengths[i,between.pole.indices[i,1:number.of.valid.lines[i]]],proposed.adjusted.angles[i,between.pole.indices[i,1:number.of.valid.lines[i]]]*360/2/pi,xlim=c(0,maximum.line.length),ylim=c(0,180),xlab="line length",ylab="angle",main=individual.names[i],transformation=sqrt)
+	
+}
+
+dev.off()
+
+x.limits <- rep(NA,number.of.observations)
+y.limits <- rep(NA,number.of.observations)
+z.limits <- rep(NA,number.of.observations)
+
+for (i in 1:number.of.observations){
+
+	x.limits[i] <- max(abs(as.vector(transformed.line.midpoints[i,between.pole.indices[i,1:number.of.valid.lines[i]],1])))
+	y.limits[i] <- max(abs(as.vector(transformed.line.midpoints[i,between.pole.indices[i,1:number.of.valid.lines[i]],2])))
+	
+	z.limits[i] <- abs(transformed.point.p1[i,3])
+	
+}
+
+pdf(file=paste(output.location,"/angle_against_location.pdf",sep=""),width=9,height=number.of.observations*3)
+
+par(mfrow=c(number.of.observations,3))
+
+for (i in 1:number.of.observations){
+
+	x.axis.limit <- max(x.limits[i],y.limits[i],z.limits[i])
+	
+	smoothScatter(transformed.line.midpoints[i,between.pole.indices[i,1:number.of.valid.lines[i]],1],proposed.adjusted.angles[i,between.pole.indices[i,1:number.of.valid.lines[i]]]*360/2/pi,xlim=c(-x.axis.limit,x.axis.limit),ylim=c(0,180),xlab="x",ylab="angle",main=individual.names[i],transformation=sqrt)
+	abline(v=-z.limits[i],lty=3)
+	abline(v=z.limits[i],lty=3)
+
+	smoothScatter(transformed.line.midpoints[i,between.pole.indices[i,1:number.of.valid.lines[i]],2],proposed.adjusted.angles[i,between.pole.indices[i,1:number.of.valid.lines[i]]]*360/2/pi,xlim=c(-x.axis.limit,x.axis.limit),ylim=c(0,180),xlab="y",ylab="angle",main=individual.names[i],transformation=sqrt)
+	abline(v=-z.limits[i],lty=3)
+	abline(v=z.limits[i],lty=3)
+
+	smoothScatter(transformed.line.midpoints[i,between.pole.indices[i,1:number.of.valid.lines[i]],3],proposed.adjusted.angles[i,between.pole.indices[i,1:number.of.valid.lines[i]]]*360/2/pi,xlim=c(-x.axis.limit,x.axis.limit),ylim=c(0,180),xlab="z",ylab="angle",main=individual.names[i],transformation=sqrt)
+	abline(v=-z.limits[i],lty=3)
+	abline(v=z.limits[i],lty=3)
+	
+}
+
+dev.off()
+
+angle.comparisons <- matrix(0,nrow=number.of.observations,ncol=number.of.observations)
+
+for (i in 1:(number.of.observations-1)){
+
+	for (j in (i+1):number.of.observations){
+	
+		angle.comparisons[j,i] <- mean(ecdf(proposed.adjusted.angles[i,between.pole.indices[i,1:number.of.valid.lines[i]]])(proposed.adjusted.angles[j,between.pole.indices[j,1:number.of.valid.lines[j]]]))
+		
+	}
+	
+}
+
+angle.comparisons[upper.tri(angle.comparisons)] <- (1-t(angle.comparisons))[upper.tri(1-t(angle.comparisons))]
+diag(angle.comparisons) <- 0.5
+angle.comparisons <- as.data.frame(signif(angle.comparisons,3),row.names=individual.names)
+colnames(angle.comparisons) <- individual.names
+
+write.csv(angle.comparisons,file=paste(output.location,"/angle_comparisons.csv",sep=""))
+
+detach(comparison.data)
+
+}
+
+source.location <- "Data/R_data/comparison_data.RData"
+output.location <- "Data/Plots"
+
+plotting.results(source.location,output.location)
+```
+
+1. *.../Project_folder/Data/Plots/angles.pdf* is a plot of the distribution of angles $\theta^{(i)}$. Larger angles indicate greater deviation from the model. 
+1. *.../Project_folder/Data/Plots/angle_against_length.pdf* is a plot of $\theta^{(i)}$ against line length $||\underline{L}^{(i)}(0)-\underline{L}^{(i)}(1)||$.
+1. *.../Project_folder/Data/Plots/angle_against_location.pdf* is a plot of $\theta^{(i)}$ against the coordinate values of the midpoint $\underline{\mu}^{(i)}$. Observed trends may indicate misspecification of pole locations $\underline{p}^{(1)}$ and $\underline{p}^{(2)}$.
+1. *.../Project_folder/Data/Plots/adjusted_angle_comparisons.csv* is a table of values of $\Pi(\Theta_1,\Theta_2)$ where $\Theta$ is the set of angles $\theta^{(i)}$ for a single observation. The columns represent $\Theta_1$, with rows representing $\Theta_2$. Values of $\Pi(\Theta_1,\Theta_2)>0.5$ indicate greater deviation from the model for $\Theta_2$ than for $\Theta_1$, the strength of which increases with distance from 0.5.
+
+# Shortcut guide
+
+If the file structure already exists and all of the data files have been correctly located then the entire code may be run by clicking the **Knit** button in RStudio or calling the command *knit()* on this file.
