@@ -1,5 +1,5 @@
 # VolumeFinder
-Procedures for volume analysis and spatial statistics of 3D point sets in IgorPro. A detailed walkthrough of the analysis procedure is available [here](https://github.com/quantixed/VolumeFinder/blob/master/volumefinder-analysis-3d.pdf).
+Procedures for volume analysis and spatial statistics of 3D point sets in IgorPro. A detailed walkthrough of the analysis procedure is available [here](https://github.com/quantixed/VolumeFinder/blob/master/volumefinder-analysis-3d.pdf). This README contains a brief overview.
 
 Two types of analysis are possible
 
@@ -48,3 +48,7 @@ Each cell/movie is analysed as a separate pxp. Use [SummaryPXP.ipf](https://gith
 ####Extra code
 
 A little tool called `checkAxis.ipf` was developed to help visualise and correct spindle axis in 3D via gizmo. Current workflow is to: 1. run the load and analysis (using input coordinates for poles); 2. use checkaxis to refine the axis (for all datasets); 3. redo the analysis.
+
+###Analysis using R
+
+The analysis can be reproduced in R. Simply use this [R markdown file](https://github.com/quantixed/VolumeFinder/blob/master/Mitotic_spindle_modelling.Rmd), following the instructions [here](https://github.com/quantixed/VolumeFinder/blob/master/Mitotic_spindle_modelling.html). The analysis in R requires the xyz coordinates of the start and end points of all lines generated from the skeletons. These coordinates can be output in csv format using [ExportToR.ipf](https://github.com/quantixed/VolumeFinder/blob/master/ExportToR.ipf), see the instructions for further details. Alternatively, you may use some other non-Igor workflow to get the coordinates and run the analysis in R.
