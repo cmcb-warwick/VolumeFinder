@@ -56,12 +56,19 @@ macro "Calculate 3View SNR"	{
 	// invert 3View
 	selectWindow(title3View);
 	run("Invert", "stack");
+	run("Set Scale...", "distance=0");
+	getDimensions(width, height, channels, slices, frames);
+	area = width * height;
 	// make tables to store data
-	tableTitle="SNR data";	
-	tableTitle2="["+tableTitle+"]";
-	run("Table...", "name="+tableTitle2+" width=600 height=250");
-	print(tableTitle2, "\\Headings:Slice\tMean\tStdev\tSNR");
-	run("Set Measurements...", "mean standard redirect=" + title3View + " decimal=3");
+	tableTitle="[SNR data]";
+	if(isOpen("SNR data")) {
+		print("Table is open");
+	}
+		else {
+			run("Table...", "name="+tableTitle+" width=600 height=250");
+			print(tableTitle, "\\Headings:Slice\tMean\tStdev\tSNR\tArea1\tArea2");
+	}
+	run("Set Measurements...", "area mean standard redirect=" + title3View + " decimal=3");
 	// measure within original mask
 	for (i=0; i<numZ; i++)	{
 		selectWindow(titleAm);
@@ -69,16 +76,30 @@ macro "Calculate 3View SNR"	{
 		run("Create Selection");
 		run("Measure");
 		meanVar = getResult("Mean");
+		areaMeanVar = getResult("Area");
 		selectWindow("Result of large");
 		setSlice(i+1);
 		run("Create Selection");
 		run("Measure");
 		stdevVar = getResult("StdDev");
+		areaStdevVar = getResult("Area");
 		SNRVar = meanVar / stdevVar;
-		print(tableTitle2, (i) + "\t" + meanVar + "\t" + stdevVar + "\t" + SNRVar);
+		if ((areaMeanVar < 10 || areaMeanVar == area) || (areaStdevVar < 10 || areaStdevVar == area)) {
+			meanVar = NaN;
+			stdevVar = NaN;
+			SNRVar = NaN;
+		}
+		print(tableTitle, (i) + "\t" + meanVar + "\t" + stdevVar + "\t" + SNRVar + "\t" + areaMeanVar + "\t" + areaStdevVar);
 	}
-	selectWindow("Result of large");
-	close();
+	selectWindow(title3View);
+	title = replace(title3View,".tif","");
+	dir = getInfo("image.directory");
+	run("Close All");
+	wait(1000);
+	call("java.lang.System.gc");
+	wait(1000);
+	selectWindow("SNR data");
+	saveAs("Text", dir+title+"SNR.txt");
 	
 	setBatchMode(false);
 }
