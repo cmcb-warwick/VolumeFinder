@@ -32,6 +32,9 @@ macro "Calculate 3View SNR"	{
 	setAutoThreshold("Default dark");
 	setThreshold(1, 2);
 	setOption("BlackBackground", false);
+	// mask will not work from 8-bit color which some of the am files are
+	// bitDepth() == 8 in both cases. Just convert anyway.
+	run("8-bit");
 	run("Convert to Mask", "method=Default background=Dark");
 	// make large and medium version
 		// duplicate
@@ -62,7 +65,7 @@ macro "Calculate 3View SNR"	{
 	// make tables to store data
 	tableTitle="[SNR data]";
 	if(isOpen("SNR data")) {
-		print("Table is open");
+		print(tableTitle, "\\Clear");
 	}
 		else {
 			run("Table...", "name="+tableTitle+" width=600 height=250");
@@ -89,7 +92,7 @@ macro "Calculate 3View SNR"	{
 			stdevVar = NaN;
 			SNRVar = NaN;
 		}
-		print(tableTitle, (i) + "\t" + meanVar + "\t" + stdevVar + "\t" + SNRVar + "\t" + areaMeanVar + "\t" + areaStdevVar);
+		print(tableTitle, (i+1) + "\t" + meanVar + "\t" + stdevVar + "\t" + SNRVar + "\t" + areaMeanVar + "\t" + areaStdevVar);
 	}
 	selectWindow(title3View);
 	title = replace(title3View,".tif","");
