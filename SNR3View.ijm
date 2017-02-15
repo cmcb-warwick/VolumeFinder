@@ -33,8 +33,8 @@ macro "Calculate 3View SNR"	{
 	setThreshold(1, 2);
 	setOption("BlackBackground", false);
 	// mask will not work from 8-bit color which some of the am files are
-	// bitDepth() == 8 in both cases. Just convert anyway.
-	run("8-bit");
+	// bitDepth() == 8 in both cases.
+	run("8-bit");	// comment/uncomment if this is a problem.
 	run("Convert to Mask", "method=Default background=Dark");
 	// make large and medium version
 		// duplicate
