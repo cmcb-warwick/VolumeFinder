@@ -103,7 +103,7 @@ Function VolumeFinder()
 End
 
 // This function does the calculations for each dataset
-////	@param	m0		matrix for processing
+///	@param	m0		matrix for processing
 Function VolumeCalc(m0)
 	Wave m0
 	
@@ -177,9 +177,9 @@ Function VolumeCalc(m0)
 End
 
 
-////	@param	xnm	voxel size, x dimension in nm, i.e. 12
-////	@param	ynm	voxel size, y dimension in nm, i.e. 12
-////	@param	znm	voxel size, z dimension in nm, i.e. 60
+///	@param	xnm	voxel size, x dimension in nm, i.e. 12
+///	@param	ynm	voxel size, y dimension in nm, i.e. 12
+///	@param	znm	voxel size, z dimension in nm, i.e. 60
 Function ScaleIt(xnm,ynm,znm)
 	Variable xnm, ynm, znm
 	//This will scale the points to real world values

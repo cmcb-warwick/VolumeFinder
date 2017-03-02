@@ -1,5 +1,13 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
+
+// Menu item for easy execution
+Menu "Macros"
+	Submenu "Spatial Analysis"
+	"Check Axes",  ProcessAll()
+	End
+End
+
 Function ProcessAll()
 	DataLoader()
 	AxisChecker()
@@ -67,7 +75,7 @@ Function DataLoader()
 	endfor
 End
 
-//// @param	folderName	this is a string containing the folder in data:
+/// @param	folderName	this is a string containing the folder in data:
 Function GizPlotter(folderName)
 	String folderName
 	if(igorversion()<7)

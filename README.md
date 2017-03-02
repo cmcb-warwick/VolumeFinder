@@ -14,7 +14,7 @@ Place all procedures in `User Procedures` directory which can be found in:
 
 Mac: `/Users/<user>/Documents/WaveMetrics`
 
-Windows: `C:\Users\<user>Documents\WaveMetrics`
+Windows: `C:\Users\<user>\Documents\WaveMetrics`
 
 Load `VFMasterproc.ipf` into a new experiment and then one of the following options:
 

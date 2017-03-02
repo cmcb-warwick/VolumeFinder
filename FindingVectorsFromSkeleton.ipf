@@ -10,6 +10,11 @@ Menu "Macros"
 	End
 End
 
+// Note the execution of MTs2Vectors is slow with many MTs
+// Further increases in speed are likely if elli_* and vec_* waves
+// are placed into data folders or packed into a 3D wave.
+// This has consequences for the remaining programs so has been left the way it is.
+
 // Workflow to load and analyse a dataset from set of TIFFs through to report
 Function MTs2Vectors()
 	if(ProcessTIFFs() == -1)
@@ -151,7 +156,7 @@ Function ProcessTIFFs()
 End
 
 // This pulls the skeletons out from each TIFF and sends to TheFitter
-////	@param	m0		lImage 2D wave(image)
+///	@param	m0		lImage 2D wave(image)
 Function Extractor(m0)
 	Wave m0
 	
@@ -163,8 +168,8 @@ Function Extractor(m0)
 	Variable i
 	
 	for(i = 1; i < (lastMT + 1); i += 1) // MT, 1-based
-		Duplicate/O m0, tempXw
-		Duplicate/O m0, tempYw
+		Duplicate/O/FREE m0, tempXw
+		Duplicate/O/FREE m0, tempYw
 		tempXw = (m0[p][q] == i) ? p : NaN
 		tempYw = (m0[p][q] == i) ? q : NaN
 		Redimension/N=(V_npnts) tempXw,tempYw
@@ -178,9 +183,9 @@ Function Extractor(m0)
 End
 
 // Fits a 2D line to the skeleton and uses this as a vec* wave
-////	@param	xW		this is the xWave for fitting
-////	@param	yW		this is the yWave for fitting
-////	@param	i		passing this variable rather than using another global variable
+///	@param	xW		this is the xWave for fitting
+///	@param	yW		this is the yWave for fitting
+///	@param	i		passing this variable rather than using another global variable
 Function TheFitter(xW,yW,i)
 	Wave xW
 	Wave yW
@@ -523,8 +528,8 @@ Function segWrapper()
 End
 
 // Function to find the distance between two MT segments (at closest approach)
-////	@param	m0		matrix wave containing 2D coords for segment 1
-////	@param	m1		matrix wave containing 2D coords for segment 2
+///	@param	m0		matrix wave containing 2D coords for segment 1
+///	@param	m1		matrix wave containing 2D coords for segment 2
 Function seg2seg(m0,m1)
 	Wave m0,m1
 	MatrixOp/O matP = row(m0,0)
@@ -597,8 +602,8 @@ Function seg2seg(m0,m1)
 End
 
 // Function to find the angle between two MT segments
-////	@param	m0		matrix wave containing 2D coords for segment 1
-////	@param	m1		matrix wave containing 2D coords for segment 2
+///	@param	m0		matrix wave containing 2D coords for segment 1
+///	@param	m1		matrix wave containing 2D coords for segment 2
 Function ssAngle(m0,m1)
 	Wave m0,m1
 	
@@ -744,10 +749,10 @@ Function elliWrapper()
 End
 
 // Function to lay the spindle back down so that projection can be done
-////	@param	eList	string with wavelist of eligible vec_ waves
-////	@param	cx		coords for c, the midpoint of p1 and p2
-////	@param	cy		coords for c, the midpoint of p1 and p2
-////	@param	cz		coords for c, the midpoint of p1 and p2
+///	@param	eList	string with wavelist of eligible vec_ waves
+///	@param	cx		coords for c, the midpoint of p1 and p2
+///	@param	cy		coords for c, the midpoint of p1 and p2
+///	@param	cz		coords for c, the midpoint of p1 and p2
 Function PutEllipseBack(matList,cx,cy,cz)
 	String matList
 	Variable cx,cy,cz

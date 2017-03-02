@@ -1,6 +1,11 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
+// Menu item for easy execution
+Menu "Macros"
+	"Export to R...", LoadAndExportToR()
+End
+
 //This function loads all the the waves from different Igor pxps in a directory
 Function LoadAndExportToR()
 	

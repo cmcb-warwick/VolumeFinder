@@ -1,6 +1,11 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
+// Menu item for easy execution
+Menu "Macros"
+	"All Analysis"
+End
+
 Function AllAnalysis()
 	AngleLoader()
 	ProcessWaves()
@@ -270,8 +275,8 @@ Function CompareAlphaAll()
 	endfor
 End
 
-//// @param	w0c	wave containing angle differences from ideal distribution (may have NaNs)
-//// @param	w1c	wave containing angle differences from ideal distribution (may have NaNs)
+/// @param	w0c	wave containing angle differences from ideal distribution (may have NaNs)
+/// @param	w1c	wave containing angle differences from ideal distribution (may have NaNs)
 Function CompareAlpha(w0c,w1c)
 	Wave w0c,w1c
 	
@@ -297,8 +302,8 @@ Function CompareAlpha(w0c,w1c)
 	return tempvar
 End
 
-////	@param	value				this is the input value that requires rounding
-////	@param	numSigDigits		number of significant digits for the rounding procedure
+///	@param	value				this is the input value that requires rounding
+///	@param	numSigDigits		number of significant digits for the rounding procedure
 Function Rounder(value, numSigDigits)
 	Variable value, numSigDigits
  
