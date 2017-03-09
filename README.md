@@ -52,3 +52,7 @@ A little tool called `checkAxis.ipf` was developed to help visualise and correct
 ###Analysis using R
 
 The analysis can be reproduced in R. Simply use this [R markdown file](https://github.com/quantixed/VolumeFinder/blob/master/Mitotic_spindle_modelling.Rmd), following the instructions [here](https://github.com/quantixed/VolumeFinder/blob/master/Mitotic_spindle_modelling.html). The analysis in R requires the xyz coordinates of the start and end points of all lines generated from the skeletons. These coordinates can be output in csv format using [ExportToR.ipf](https://github.com/quantixed/VolumeFinder/blob/master/ExportToR.ipf), see the instructions for further details. Alternatively, you may use some other non-Igor workflow to get the coordinates and run the analysis in R.
+
+###Calculation of SNR
+
+An [ImageJ macro](https://github.com/quantixed/VolumeFinder/blob/master/SNR3View.ijm) will extract the mean pixel density in segmented MT regions (per slice) and calculate the SD of a halo around the MTs (excluding MTs themselves), SNR is calculated and output as a csv. [Igor code](https://github.com/quantixed/VolumeFinder/blob/master/SNR3View.ipf) Igor code is available to crunch the output.
